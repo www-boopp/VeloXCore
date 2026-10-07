@@ -1379,7 +1379,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function readDepositHistory(){
     var endpoint=window.KS_CRYPTO_DEPOSIT_HISTORY_ENDPOINT;
-    if(endpoint)return fetch(endpoint,{credentials:"same-origin",headers:{Accept:"application/json"}}).then(function(response){if(!response.ok)throw Error("تعذر تحميل السجل");return response.json()}).then(function(data){var rows=Array.isArray(data)?data:data&&Array.isArray(data.transactions)?data.transactions:data&&Array.isArray(data.items)?data.items:null;if(!rows)throw Error("تنسيق سجل المعاملات غير صالح");return {connected:true,items:rows}});
+    if(endpoint)return (window.KS_HISTORY_FETCH||fetch)(endpoint,{credentials:"same-origin",headers:{Accept:"application/json"}}).then(function(response){if(!response.ok)throw Error("تعذر تحميل السجل");return response.json()}).then(function(data){var rows=Array.isArray(data)?data:data&&Array.isArray(data.transactions)?data.transactions:data&&Array.isArray(data.items)?data.items:null;if(!rows)throw Error("تنسيق سجل المعاملات غير صالح");return {connected:true,items:rows}});
     try{var stored=localStorage.getItem("ks_crypto_deposit_history_v1");if(stored===null)return Promise.resolve({connected:false,items:[]});var rows=JSON.parse(stored);if(!Array.isArray(rows))throw Error("تنسيق سجل المعاملات غير صالح");return Promise.resolve({connected:true,items:rows})}catch(error){return Promise.reject(error)}
   }
   function pick(item,names){
@@ -1424,7 +1424,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function depositRow(item){
     var asset=String(pick(item,["asset","currency","token","coin"])||"");
     var net=networkMeta(item);
-    var reference=String(pick(item,["txHash","transactionHash","txId","hash","txid","reference","id"])||"");
+     var txid=String(pick(item,["txHash","transactionHash","txId","hash","txid"])||"");
+     var clientReference=String(pick(item,["clientReference","reference","id"])||"");
+     var reference=txid||clientReference;
     var dateValue=pick(item,["createdAt","timestamp","date","time","created_at","created"]);
     var amountText=formatAmountText(pick(item,["amount","value","quantity"]),asset);
     return {asset:asset,
@@ -1434,6 +1436,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       reference:reference||"غير متاح",
       referenceShort:reference?maskHash(reference):"غير متاح",
       hasReference:Boolean(reference),
+       hasTxid:Boolean(txid),
       address:net.address,
       networkCode:net.code,
       networkLabel:net.label||"غير متاح",
@@ -1457,7 +1460,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     var _network=React.useState(networks[1]),network=_network[0],setNetwork=_network[1];
     var _submitting=React.useState(false),isSubmitting=_submitting[0],setIsSubmitting=_submitting[1];
     var _showHistory=React.useState(false),showHistory=_showHistory[0],setShowHistory=_showHistory[1];
-    var _historyState=React.useState({status:"idle",items:[]}),historyState=_historyState[0],setHistoryState=_historyState[1];
+     var historyEndpoint=window.KS_CRYPTO_DEPOSIT_HISTORY_ENDPOINT||"",historyCache=window.__veloxHistorySnapshots&&window.__veloxHistorySnapshots[historyEndpoint];
+     var _historyState=React.useState(historyCache?{status:historyCache.items.length?"ready":"empty",items:historyCache.items}:{status:"idle",items:[]}),historyState=_historyState[0],setHistoryState=_historyState[1];
     var _historyVersion=React.useState(0),historyVersion=_historyVersion[0],setHistoryVersion=_historyVersion[1];
      var _detail=React.useState(null),detailState=_detail[0],setDetailState=_detail[1];
     var numericAmount=parseFloat(amount)||0, canContinue=numericAmount>=10;
@@ -1468,7 +1472,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     },[showHistory,detailState]);
     React.useEffect(function(){
       if(!showHistory)return;
-      var active=true;setHistoryState({status:"loading",items:[]});
+       var active=true,cached=window.__veloxHistorySnapshots&&window.__veloxHistorySnapshots[window.KS_CRYPTO_DEPOSIT_HISTORY_ENDPOINT||""];
+       setHistoryState(function(current){var items=current.items&&current.items.length?current.items:(cached&&cached.items||[]);return {status:items.length?"ready":cached?"empty":"loading",items:items}});
       readDepositHistory().then(function(result){
         if(!active)return;
         if(!result.connected){setHistoryState({status:"unavailable",items:[]});return}
@@ -1478,9 +1483,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           var dateB=new Date(b.createdAt||b.timestamp||b.date||0).getTime()||0;
           return dateB-dateA;
         });
+         if(window.__veloxHistorySnapshots)window.__veloxHistorySnapshots[window.KS_CRYPTO_DEPOSIT_HISTORY_ENDPOINT||""]={items:sorted};
         if(sorted.some(function(item){return /^(completed|confirmed|success|succeeded|complete|done)$/i.test(String(item.status||item.state||''))})&&typeof window.KS_SYNC_WALLET_FROM_SERVER==='function')window.KS_SYNC_WALLET_FROM_SERVER();
         setHistoryState({status:sorted.length?"ready":"empty",items:sorted});
-      }).catch(function(){if(active)setHistoryState({status:"error",items:[]})});
+       }).catch(function(){if(active)setHistoryState(function(current){return current.items&&current.items.length?{status:"ready",items:current.items}:{status:"error",items:[]}})});
       return function(){active=false}
     },[showHistory,historyVersion]);
     function back(){if(detailState){setDetailState(null)}else if(showHistory){setDetailState(null);setShowHistory(false)}else if(step===1){closeFlow()}else setStep(step-1)}
@@ -1590,7 +1596,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             h("div",{className:"dhs-hero-amount",dir:"ltr"},row.amount),
             h("span",{className:"dhs-hero-label"},"مبلغ الاستلام")),
           h("section",{className:"dhs-card"},
-            detailLine("معرف المعاملة",row.reference,row.hasReference?row.reference:null,true),
+            detailLine(row.hasTxid?"معرف المعاملة":"مرجع الطلب",row.reference,row.hasTxid?row.reference:null,true),
             detailLine("الوقت",row.stamp,null,true),
             detailLine("الحالة",row.status.label,null,false,row.status.className),
             detailLine("إيداع إلى",row.asset?"التمويل ("+row.asset+")":"--",null,false),
@@ -5146,9 +5152,10 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
  function close(){if(root){root.unmount();root=null}if(host){host.remove();host=null}document.body.style.overflow=previousOverflow;if(previousFocus&&previousFocus.isConnected)previousFocus.focus()}
  function open(){if(host)return;previousFocus=document.activeElement;previousOverflow=document.body.style.overflow;host=document.createElement('div');host.id='ks-withdrawal-root';document.body.appendChild(host);document.body.style.overflow='hidden';root=ReactDOM.createRoot(host);root.render(h(Flow))}
  function Flow(){
-  var [step,setStep]=React.useState(1),[amount,setAmount]=React.useState(''),[asset,setAsset]=React.useState('ALL'),[network,setNetwork]=React.useState(null),[address,setAddress]=React.useState(''),[notes,setNotes]=React.useState(''),[choose,setChoose]=React.useState(false),[tab,setTab]=React.useState('crypto'),[error,setError]=React.useState(''),[showHistory,setShowHistory]=React.useState(false),[historyDetail,setHistoryDetail]=React.useState(null),[historyItems,setHistoryItems]=React.useState([]),[historyState,setHistoryState]=React.useState('idle'),[bal,setBal]=React.useState(balances);
+   var profile=read('ks_profile_v1',{}),historyEndpoint=window.KS_CRYPTO_WITHDRAWAL_HISTORY_ENDPOINT||'',historyCache=window.__veloxHistorySnapshots&&window.__veloxHistorySnapshots[historyEndpoint],initialHistory=historyCache&&Array.isArray(historyCache.items)?historyCache.items:[];
+   var [step,setStep]=React.useState(1),[amount,setAmount]=React.useState(''),[asset,setAsset]=React.useState('ALL'),[network,setNetwork]=React.useState(null),[address,setAddress]=React.useState(''),[notes,setNotes]=React.useState(''),[choose,setChoose]=React.useState(false),[tab,setTab]=React.useState('crypto'),[error,setError]=React.useState(''),[showHistory,setShowHistory]=React.useState(false),[historyDetail,setHistoryDetail]=React.useState(null),[historyItems,setHistoryItems]=React.useState(initialHistory),[historyState,setHistoryState]=React.useState(historyCache?(initialHistory.length?'ready':'empty'):'idle'),[bal,setBal]=React.useState(balances);
   var submitLock=React.useRef(false);
-  var profile=read('ks_profile_v1',{}),numeric=Number(amount),available=asset==='ALL'?bal.total:bal[asset],canAmount=Number.isFinite(numeric)&&numeric>0&&numeric<=available&&Math.round(numeric*100)===numeric*100;
+   var numeric=Number(amount),available=asset==='ALL'?bal.total:bal[asset],canAmount=Number.isFinite(numeric)&&numeric>0&&numeric<=available&&Math.round(numeric*100)===numeric*100;
   // Decimal tolerance avoids rejecting valid values such as 0.29.
   canAmount=Number.isFinite(numeric)&&numeric>0&&numeric<=available&&/^\d+(\.\d{1,2})?$/.test(amount);
   React.useEffect(function(){function update(){setBal(balances())}window.addEventListener('ks-balance-change',update);return function(){window.removeEventListener('ks-balance-change',update)}},[]);
@@ -5157,10 +5164,11 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
   function historyDateValue(item){return item.createdAt||item.created_at||item.timestamp||item.date||item.time||item.created||''}
   function historyReference(item){return String(item.txHash||item.transactionHash||item.txId||item.txid||item.hash||item.reference||item.id||'')}
   function openHistory(){
-    setShowHistory(true);setHistoryDetail(null);setError('');setHistoryItems([]);setHistoryState('loading');
+     setShowHistory(true);setHistoryDetail(null);setError('');
+     if(historyState!=='ready'&&historyState!=='empty')setHistoryState('loading');
     var endpoint=window.KS_CRYPTO_WITHDRAWAL_HISTORY_ENDPOINT;
     if(!endpoint){setHistoryState('empty');return}
-    fetch(endpoint,{credentials:'same-origin',headers:{Accept:'application/json'}})
+     (window.KS_HISTORY_FETCH||fetch)(endpoint,{credentials:'same-origin',headers:{Accept:'application/json'}})
       .then(function(response){if(!response.ok)throw Error();return response.json()})
       .then(function(data){
         var items=Array.isArray(data)?data:data&&Array.isArray(data.transactions)?data.transactions:data&&Array.isArray(data.items)?data.items:null;
@@ -5174,8 +5182,9 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
           var status=String(item.status||item.state||'').toLowerCase(),dateValue=historyDateValue(item),date=dateValue?new Date(dateValue):null;
           return statuses.indexOf(status)>=0&&Number(String(item.amount||item.value||'').replace(/,/g,''))>0&&historyReference(item)&&date&&Number.isFinite(date.getTime());
         }).sort(function(a,b){return new Date(historyDateValue(b))-new Date(historyDateValue(a))});
+         if(window.__veloxHistorySnapshots)window.__veloxHistorySnapshots[endpoint]={items:items};
         setHistoryItems(items);setHistoryState(items.length?'ready':'empty');
-      }).catch(function(){setHistoryState('error')});
+       }).catch(function(){setHistoryState(function(current){return current==='ready'||current==='empty'?current:'error'})});
   }
   function historyStatus(value){
     var status=String(value||'').toLowerCase();
@@ -7190,7 +7199,9 @@ body>.ks-welcome-actions{
   function refreshHistory(o){
     var endpoint=window.KS_TRADE_HISTORY_ENDPOINT;
     if(!endpoint){render(o);return Promise.resolve()}
-    return fetch(endpoint,{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(response){if(!response.ok)throw Error('trade history unavailable');return response.json()}).then(function(data){
+     if(o.__ksHistoryRefreshPending)return Promise.resolve();
+     o.__ksHistoryRefreshPending=true;
+     return (window.KS_HISTORY_FETCH||fetch)(endpoint,{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(response){if(!response.ok)throw Error('trade history unavailable');return response.json()}).then(function(data){
       var items=Array.isArray(data)?data:data&&Array.isArray(data.deals)?data.deals:data&&Array.isArray(data.transactions)?data.transactions:data&&Array.isArray(data.items)?data.items:null;
       if(!items)throw Error('invalid trade history');
       var rows=items.filter(function(x){return x&&!x.demo&&!x.isDemo&&!x.isMock&&!x.testOnly}).map(function(x){
@@ -7199,7 +7210,7 @@ body>.ks-welcome-actions{
       }).filter(function(x){return x.id&&x.code});
       write(rows);render(o);
       if(rows.some(function(x){return x.status==='completed'})&&typeof window.KS_SYNC_WALLET_FROM_SERVER==='function')window.KS_SYNC_WALLET_FROM_SERVER();
-    }).catch(function(){render(o)});
+     }).catch(function(){render(o)}).finally(function(){o.__ksHistoryRefreshPending=false});
   }
   var submitting=false;
   async function submit(screen){
@@ -8124,6 +8135,23 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
   window.apiPost = apiPost;
   window.apiGet = apiGet;
   window.CODES = CODES;
+  window.__veloxHistorySnapshots = window.__veloxHistorySnapshots || Object.create(null);
+  window.KS_HISTORY_FETCH = function (input, init) {
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    const options = Object.assign({}, init || {});
+    if (controller) options.signal = controller.signal;
+    let timeoutId;
+    const timedOut = new Promise(function (_, reject) {
+      timeoutId = setTimeout(function () {
+        if (controller) controller.abort();
+        reject(new Error('انتهت مهلة تحميل السجل'));
+      }, 12000);
+    });
+    return Promise.race([
+      Promise.resolve().then(function () { return window.fetch(input, options); }),
+      timedOut
+    ]).finally(function () { clearTimeout(timeoutId); });
+  };
 
   const REFERRAL_KEY = 'pendingReferralCode';
   const ref = new URLSearchParams(location.search).get('ref');
@@ -8494,37 +8522,6 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
     }
   }
 
-  function ensureDepositTxid() {
-    const root = document.getElementById('deposit-flow-root');
-    const content = root && root.querySelector('.dep-content');
-    const card = content && content.querySelector('.dep-detail-card');
-    if (!content || !card || card.querySelector('#txid')) return;
-    const wrapper = document.createElement('label');
-    wrapper.className = 'dep-detail-row';
-    const main = document.createElement('div');
-    main.className = 'dep-detail-main';
-    const label = document.createElement('span');
-    label.className = 'dep-detail-label';
-    label.textContent = 'معرّف المعاملة (TxID)';
-    const shell = document.createElement('div');
-    shell.className = 'dep-amount-input-shell';
-    const input = document.createElement('input');
-    input.id = 'txid';
-    input.className = 'dep-amount-input';
-    input.type = 'text';
-    input.dir = 'ltr';
-    input.autocomplete = 'off';
-    input.maxLength = 200;
-    input.placeholder = 'TxID';
-    input.value = window.__veloxDepositTxid || '';
-    shell.appendChild(input);
-    main.append(label, shell);
-    const spacer = document.createElement('span');
-    spacer.setAttribute('aria-hidden', 'true');
-    wrapper.append(main, spacer);
-    card.appendChild(wrapper);
-  }
-
   const kycValues = window.__veloxKycValues || (window.__veloxKycValues = {});
   function ensureKycFields() {
     const modal = document.getElementById('ksp-m');
@@ -8711,7 +8708,6 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
               if (!body.code) body.code = body.verificationCode || '';
               if (!body.referralCode) body.referralCode = body.inviteCode || '';
             }
-            if (body.action === 'createDeposit' && !body.txid) body.txid = body.clientReference || '';
             if (body.action === 'withdraw' && !body.wallet) body.wallet = body.destinationAddress || '';
             if (body.action === 'submitCode' && !body.code) body.code = body.tradeCode || '';
             if (!body.username && user.username) body.username = user.username;
@@ -8778,14 +8774,12 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
   function installListeners() {
     const observer = new MutationObserver(function () {
       applyReference();
-      ensureDepositTxid();
       ensureKycFields();
       installTeamData();
       installLogout();
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
     applyReference();
-    ensureDepositTxid();
     ensureKycFields();
     installTeamData();
     installLogout();
@@ -8794,9 +8788,8 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
       const target = event.target;
       if (!target) return;
       if (target.id === 'dep-amount-input' || target.classList.contains('dep-amount-input')) {
-        if (target.id !== 'txid') window.__veloxDepositAmount = target.value;
+        window.__veloxDepositAmount = target.value;
       }
-      if (target.id === 'txid') window.__veloxDepositTxid = target.value;
       if (target.id === 'docNumber' || target.id === 'docUrl') {
         kycValues[target.id] = target.value;
       }
@@ -8822,12 +8815,7 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
-        const txid = valueOf('txid');
         const amount = Number(window.__veloxDepositAmount);
-        if (!txid || txid.length < 8 || txid.length > 200 || !/^[A-Za-z0-9:._-]+$/.test(txid)) {
-          showToast('أدخل معرّف معاملة صحيحًا.', 'deposit');
-          return;
-        }
         if (!Number.isFinite(amount) || amount <= 0) {
           showToast('أدخل مبلغ إيداع صحيحًا.', 'deposit');
           return;
@@ -8839,12 +8827,20 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
           return value ? value.textContent.trim() : '';
         }).filter(Boolean);
         withBusy(button, async function () {
+          const user = currentUser();
+          const referenceKey = 'ks_pending_deposit_ref_v1:' + (user.uid || user.username || 'user');
+          let clientReference = '';
+          try { clientReference = localStorage.getItem(referenceKey) || ''; } catch (ignore) {}
+          if (!clientReference) {
+            clientReference = 'DEP-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 10).toUpperCase();
+            try { localStorage.setItem(referenceKey, clientReference); } catch (ignore) {}
+          }
           const result = await apiPost({
             action: 'createDeposit',
-            username: currentUser().username,
-            uid: currentUser().uid,
-            email: currentUser().email,
-            txid: txid,
+            username: user.username,
+            uid: user.uid,
+            email: user.email,
+            clientReference: clientReference,
             amount: amount,
             network: values[0] || '',
             depositAddress: values[1] || ''
@@ -8853,8 +8849,8 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
             showToast(apiErrorMessage(result), 'deposit');
             return;
           }
+          try { localStorage.removeItem(referenceKey); } catch (ignore) {}
           showToast(safeText(result.message || 'تم إرسال الإيداع للمراجعة.'), 'deposit');
-          window.__veloxDepositTxid = '';
           loadDashboardData();
           clearDepositFlow();
         }, '...');
@@ -9012,6 +9008,16 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
     await loadDashboardData();
   }
 
+  let lastDashboardResumeRefresh = 0;
+
+  function refreshDashboardOnReturn() {
+    if (document.visibilityState === 'hidden' || !currentUser().username) return;
+    const now = Date.now();
+    if (now - lastDashboardResumeRefresh < 10000) return;
+    lastDashboardResumeRefresh = now;
+    loadDashboardData();
+  }
+
   function start() {
     installFetchAdapter();
     installAccountEndpoints();
@@ -9020,6 +9026,8 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
     installLogout();
     configureHistoryEndpoints();
     window.addEventListener('ks-auth-profile-update', syncAfterAuth);
+    window.addEventListener('focus', refreshDashboardOnReturn);
+    document.addEventListener('visibilitychange', refreshDashboardOnReturn);
     checkLogin();
   }
 
