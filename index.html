@@ -1194,7 +1194,12 @@ new MutationObserver(mount).observe(document.documentElement,{childList:true,sub
   .dep-notes h2{margin:0 0 10px;font-size:16px;font-weight:700;color:var(--foreground)}
   .dep-notes ul{padding:0 18px 0 0;margin:0;color:var(--muted-foreground);font-size:13px;line-height:1.7}
   .dep-notes li{padding:0 0 7px}
-  .dep-toast{position:fixed;z-index:2147483001;bottom:calc(env(safe-area-inset-bottom) + 88px);left:50%;transform:translateX(-50%);background:var(--popover);border:1px solid var(--border);color:var(--foreground);border-radius:999px;padding:10px 16px;font-size:13px;box-shadow:var(--surface-shadow)}
+  .dep-toast{position:fixed;z-index:2147483001;top:calc(env(safe-area-inset-top) + 16px);left:50%;transform:translateX(-50%);background:var(--popover);border:1px solid var(--border);color:var(--foreground);border-radius:999px;padding:10px 16px;font-size:13px;box-shadow:var(--surface-shadow)}
+  .dep-toast-success{display:flex;align-items:center;gap:11px;width:max-content;max-width:calc(100vw - 32px);min-height:62px;padding:12px 17px;border-radius:18px;font-size:15px;font-weight:650;line-height:1.55;direction:rtl;white-space:normal}
+  .dep-toast-icon{position:relative;display:block;flex:0 0 30px;width:30px;height:30px;border:4px solid rgba(255,255,255,.88);border-top-color:transparent;border-radius:50%;background:transparent;animation:dep-toast-spin .85s linear infinite}
+  .dep-toast-icon:before{content:"";position:absolute;top:-5px;left:50%;width:8px;height:8px;border-radius:50%;background:#bd00e7;box-shadow:0 0 8px rgba(189,0,231,.65);transform:translateX(-50%)}
+  @keyframes dep-toast-spin{to{transform:rotate(360deg)}}
+  .dep-toast-message{display:block;min-width:0}
   /* Welcome-screen visual system shared by all three deposit steps. */
   .dep-backdrop:not(.dep-history-mode){--background:#08070b;--foreground:#f7f4fb;--card:#15111b;--popover:#211829;--primary:#dc42f1;--secondary:#211829;--muted-foreground:#b2aabb;--border:rgba(230,187,244,.18);--divider:rgba(230,187,244,.11);--trade-gradient:linear-gradient(110deg,#b626d7,#8344e6 55%,#5649cc);--surface-shadow:0 12px 34px rgba(0,0,0,.22);background:#08070b;color:var(--foreground);font-family:Inter,"Segoe UI",Arial,sans-serif}
   .dep-backdrop:not(.dep-history-mode) .dep-flow{background:radial-gradient(ellipse 85% 30% at 50% -8%,rgba(179,23,214,.27),transparent 75%),linear-gradient(155deg,#0b0911 0%,#08080b 52%,#10101a 100%);border-inline:1px solid rgba(255,255,255,.04)}
@@ -1340,9 +1345,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     {name:"USDT-Polygon",label:"Polygon (PoS)",coin:"USDT",eta:"حوالي 2–5 دقائق",address:"0x62860383c52854A3f9047F9E5c78396FDaF57CC1",confirmations:"128 تأكيدًا"}
   ];
   window.KS_DEPOSIT_NETWORKS=networks;
-  function showToast(message){
+  function showToast(message,success){
     var old=document.querySelector(".dep-toast");if(old)old.remove();
-    var node=document.createElement("div");node.className="dep-toast";node.setAttribute("role","status");node.textContent=message;document.body.appendChild(node);
+    var node=document.createElement("div");node.className="dep-toast"+(success?" dep-toast-success":"");node.setAttribute("role","status");if(success){node.dir="rtl";var icon=document.createElement("span");icon.className="dep-toast-icon";icon.setAttribute("aria-hidden","true");var label=document.createElement("span");label.className="dep-toast-message";label.textContent=message;node.appendChild(icon);node.appendChild(label)}else{node.textContent=message}document.body.appendChild(node);
     clearTimeout(toastTimer);toastTimer=setTimeout(function(){node.remove()},1900);
   }
   function closeFlow(){
@@ -1513,7 +1518,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if(!response.ok)throw Error("deposit submit failed");
         var result={};try{result=await response.json()}catch(ignore){}
         if(!result||!(result.ok===true||result.success===true)||result.error)throw Error("deposit not acknowledged by server");
-        showToast("تم إرسال تفاصيل الإيداع للمراجعة. لن يتغير الرصيد قبل تأكيد الإيداع.");
+        showToast("طلبك قيد المعالجة",true);
         setHistoryVersion(historyVersion+1);
         setTimeout(closeFlow,700);
       }catch(error){showToast("تعذر إرسال بيانات الإيداع؛ لم يُضف رصيد. حاول مجددًا.")}
@@ -5171,9 +5176,6 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
         }
         setHistoryItems(function(current){return [item].concat((current||[]).filter(function(existing){return historyReference(existing)!==reference}))});
         setHistoryState('ready');
-        var status=String(item.statusCode||'pending').toLowerCase();
-        setError(status==='approved'?'تم اعتماد طلب السحب':status==='rejected'?'تم رفض طلب السحب':'طلبك قيد المعالجة');
-        setStep(5);
       }
       window.addEventListener('ks-withdrawal-submitted',onWithdrawalSubmitted);
       return function(){window.removeEventListener('ks-withdrawal-submitted',onWithdrawalSubmitted)}
@@ -5295,7 +5297,7 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
       if(!response.ok)throw Error('withdrawal submit failed');
       var result={};try{result=await response.json()}catch(ignore){}
       if(!result||!(result.ok===true||result.success===true)||result.error)throw Error('withdrawal not acknowledged');
-      setError('تم إرسال طلب السحب للمراجعة وحجز المبلغ في رصيد الحساب.');
+      setError('طلبك قيد المعالجة');
        if(typeof window.KS_SYNC_WALLET_FROM_SERVER==='function'){
          try{await window.KS_SYNC_WALLET_FROM_SERVER()}catch(ignore){}
        }
@@ -5310,7 +5312,6 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
   else if(step===2){content=h('main',{className:'kw-main'},h('div',{className:'kw-warning'},'يجب أن تتطابق شبكة السحب مع شبكة عنوان الاستلام.'),h('div',{className:'kw-tabs'},h(Button,{className:tab==='all'?'selected':'',onClick:function(){setTab('all')}},'الجميع'),h(Button,{className:tab==='crypto'?'selected':'',onClick:function(){setTab('crypto')}},'العملات المشفرة')),h('div',{className:'kw-row'},h('span',null,'طريقة السحب'),h('strong',{dir:'ltr'},fmt(numeric)+' USD')),h('div',{className:'kw-network-list'},networks.filter(function(n){return asset==='ALL'||n.coin===asset}).map(function(n){return h(Button,{key:n.name,className:'kw-network',onClick:function(){selectNetwork(n)},'aria-label':'اختيار '+n.name},h(Coin,{coin:n.coin}),h('span',{className:'kw-network-body'},h('strong',{dir:'ltr'},n.name),h('small',null,'الرصيد المتاح: '+fmt(bal[n.coin])+' '+n.coin),h('small',{className:'kw-network-meta'},(n.eta||'')+' · رسم تقريبي '+withdrawFee(n)+' '+n.coin)),h(Icon,{name:'chevron'}))})));}
   else if(step===3&&network){content=h('main',{className:'kw-main'},h('div',{className:'kw-heading'},h(Coin,{coin:network.coin}),h('strong',{dir:'ltr'},network.name)),h('label',{className:'kw-field'},h('span',{className:'kw-label'},'عنوان المحفظة المستقبلة'),h('div',{className:'kw-input-wrap'},h('input',{id:'kw-address',value:address,dir:'ltr',placeholder:network.name.indexOf('TRC20')>=0?'T…':network.name.indexOf('Solana')>=0?'Solana address':'0x…',autoComplete:'off',spellCheck:false,'aria-invalid':Boolean(address&&!validAddress(address.trim(),network)),onChange:function(e){setAddress(e.target.value.trim());setError('')}}),h(Button,{className:'kw-paste',onClick:paste},'لصق')),h('p',{className:'kw-note'},'يرجى إدخال عنوان الاستلام الصحيح على شبكة '+network.name+' لضمان مطابقة بيانات الدفع.'),address&&!validAddress(address.trim(),network)?h('p',{className:'kw-error'},'صيغة العنوان غير متوافقة مع الشبكة المختارة.'):null),h('label',{className:'kw-field'},h('span',{className:'kw-label'},'ملاحظات مهمة (اختياري)'),h('textarea',{value:notes,maxLength:500,placeholder:'أضف ملاحظة للطلب',onChange:function(e){setNotes(e.target.value)}})),h('div',{className:'kw-warning'},'التحقق هنا من صيغة العنوان فقط؛ تأكد من ملكية العنوان ودعم شبكة الاستلام. التحويلات المشفرة لا يمكن التراجع عنها.'));footer=h('footer',{className:'kw-footer'},h(Button,{className:'kw-primary',disabled:!validAddress(address.trim(),network),onClick:function(){go(4)}},'متابعة إلى المراجعة'));}
   else if(step===4&&network){content=h('main',{className:'kw-main'},h('div',{className:'kw-review-amount'},h('strong',{dir:'ltr'},'USD '+fmt(numeric)),h('span',null,'مبلغ السحب')),h('p',{className:'kw-label'},'طريقة السحب'),h(Button,{className:'kw-surface kw-review-method',onClick:function(){go(3)},'aria-label':'تعديل عنوان السحب'},h(Coin,{coin:network.coin}),h('span',{className:'kw-network-body'},h('strong',{dir:'ltr'},network.name),h('span',{className:'kw-address',dir:'ltr'},address)),h('span',{className:'kw-edit'},'تعديل')),row('المبلغ المحدد',fmt(numeric)+' '+network.coin),row('رسوم الشبكة','~'+withdrawFee(network)+' '+network.coin),row('رسوم VeloXCore','80%'),row('مدة المعالجة',network.eta||'حوالي 1–5 دقائق'),row('تأكيدات مطلوبة','12 تأكيدًا'),row('الحد الأدنى للسحب','10 '+network.coin),notes?h('div',{className:'kw-note'},'ملاحظات: '+notes):null,null);footer=h('footer',{className:'kw-footer'},h(Button,{className:'kw-primary',onClick:submit},'تأكيد السحب'));}
-  else if(step===5){content=h('main',{className:'kw-main kw-result'},h('div',{className:'kw-status-card',role:'status'},h('span',{className:'kw-status-icon','aria-hidden':true},'✓'),h('strong',null,error||'طلبك قيد المعالجة'),h('p',null,'تم استلام طلب السحب. يمكنك متابعة حالته من سجل السحب.')));footer=null;}
 
   if(showHistory){content=historyDetail?renderWithdrawalDetails(historyDetail):renderWithdrawalHistory();footer=null}
   return h('div',{className:'kw-overlay'+(showHistory?' kw-history-mode':'')+(historyDetail?' kw-detail-mode':'' )},h('section',{id:'kw-dialog',className:'kw-flow',role:'dialog','aria-modal':true,'aria-labelledby':'kw-title',tabIndex:-1,lang:'ar'},h('header',{className:'kw-header'},h(Button,{className:'kw-icon','aria-label':'رجوع',onClick:back},h(Icon,{name:'back'})),h('h1',{id:'kw-title'},showHistory?(historyDetail?'تفاصيل السحب':'سجل السحب'):choose?'حساب السحب':step===3?'المعلومات الإضافية':step===4?'مراجعة السحب':step===5?'طلب السحب':'السحب'),showHistory?null:h(Button,{className:'kw-icon kw-history-open','aria-label':'فتح سجل السحب',title:'سجل السحب',onClick:openHistory},h(Icon,{name:'history'}))),step<5&&!choose&&!showHistory?h('nav',{className:'kw-progress','aria-label':'مراحل السحب'},['المبلغ','الشبكة','العنوان','المراجعة'].map(function(label,i){return h('span',{key:label,className:i<step?'active':'','aria-current':i===step-1?'step':undefined},label)})):null,content,error&&step!==5?h('div',{className:'kw-error',role:'alert'},error):null,footer));
@@ -6706,7 +6707,25 @@ function inviteSheet(){
 }
 /* ---------- KYC ---------- */
 function kycState(){return ls(KK,{level:0,status:'none',docType:'id',name:'',dob:'',country:'',address:'',files:{},submittedAt:'',reviewedAt:''})}
-function kycSheet(){
+var kycStatusCheckInFlight=false;
+function kycIsVerified(){
+  var remote=String(prof().verificationStatus||'').trim().toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/\s+/g,' ');
+  return ['verified','approved','approve','accepted','مقبول','موثق','تم','تم التحقق','تم التوثيق','موافقة','موافق','معتمد','موثق بالكامل'].indexOf(remote)>=0;
+}
+function kycSheet(statusChecked){
+  if(kycIsVerified()){toast('تم التوثيق');queueSync();return}
+  if(!statusChecked&&!kycStatusCheckInFlight&&typeof window.apiGet==='function'){
+    kycStatusCheckInFlight=true;
+    var current=prof();
+    window.apiGet({action:'getProfile',username:current.username||current.name||'',email:current.email||'',uid:current.uid||''}).then(function(result){
+      var data=result&&(result.user||result.account||result.profile||result.data||result);
+      if(result&&result.ok!==false&&data&&data.verificationStatus)setProf({verificationStatus:data.verificationStatus});
+      queueSync();
+      if(kycIsVerified()){toast('تم التوثيق');return}
+      kycSheet(true);
+    }).catch(function(){kycSheet(true)}).finally(function(){kycStatusCheckInFlight=false});
+    return;
+  }
   var state={page:0,residence:'',first:'',middle:'',last:'',nationality:'',dob:'',age:'',birthMode:'age',issueCountry:'',countryPickerId:'',countryQuery:'',docType:'',files:{},showWhy:false,showHelp:false};
   var countryCodes='AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW'.split(' ');
   var europeanCodes=new Set('AD AL AT AX BA BE BG BY CH CY CZ DE DK EE ES FI FO FR GB GG GI GR HR HU IE IM IS IT JE LI LT LU LV MC MD ME MK MT NL NO PL PT RO RS RU SE SI SJ SK SM UA VA'.split(' '));
@@ -6734,6 +6753,7 @@ function kycSheet(){
     theme.textContent='#ksp-m{background:rgba(0,0,0,.84)!important;backdrop-filter:blur(10px)}#ksp-m .ksv-shell{border-color:rgba(211,169,255,.2)!important;background:radial-gradient(ellipse 78% 42% at 100% 0%,rgba(189,35,255,.2),transparent 66%),radial-gradient(ellipse 70% 34% at 0% 100%,rgba(30,210,137,.06),transparent 68%),linear-gradient(160deg,#191523,#10151b 74%,#14131e)!important;color:#f3f0f5!important;box-shadow:0 18px 70px rgba(0,0,0,.66),0 0 28px rgba(189,35,255,.13)!important}#ksp-m .ksv-flow{color:#f3f0f5!important}#ksp-m .ksv-head{background:transparent}#ksp-m .ksv-iconbtn{border-color:rgba(255,255,255,.16)!important;background:#08070b!important;color:#f3f0f5!important;transition:border-color .18s,background .18s,box-shadow .18s}#ksp-m .ksv-iconbtn:hover,#ksp-m .ksv-iconbtn:focus-visible{border-color:#bd00e7!important;background:#130919!important;box-shadow:0 0 12px rgba(217,46,241,.22);outline:none}#ksp-m .ksv-step{color:#d5cedb!important}#ksp-m .ksv-stepnum{border-color:#d92ef1!important;color:#fff!important;box-shadow:0 0 10px rgba(217,46,241,.16)}#ksp-m .ksv-panel{border-color:rgba(211,169,255,.2)!important;background:linear-gradient(160deg,rgba(25,21,35,.98),rgba(16,21,27,.99) 74%,rgba(20,19,30,.98))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}#ksp-m .ksv-scroll{scrollbar-color:rgba(217,46,241,.45) transparent}#ksp-m .ksv-title{color:#fff!important;text-shadow:0 0 1px #fff,0 0 6px rgba(255,255,255,.25),0 0 16px rgba(196,38,232,.28)}#ksp-m .ksv-subtitle{color:#d2cdd7!important}#ksp-m .ksv-label{color:#ded9e1!important}#ksp-m .ksv-label em,#ksp-m .ksv-required em{color:#e66bef!important}#ksp-m .ksv-input{border-color:rgba(255,255,255,.14)!important;background:#09090d!important;color:#f3f0f5!important}#ksp-m .ksv-input:focus{border-color:#bd00e7!important;background:#0d0810!important;box-shadow:0 0 0 3px rgba(217,46,241,.14),0 0 16px rgba(217,46,241,.12)!important}#ksp-m .ksv-input::placeholder{color:#77737d!important}#ksp-m .ksv-country:after{color:#d6cedb!important}#ksp-m .ksv-country select option{background:#15111b;color:#f3f0f5}#ksp-m .ksv-radio-list{border:1px solid rgba(255,255,255,.1);background:#09090d!important}#ksp-m .ksv-choice{border-color:rgba(255,255,255,.09)!important;background:#09090d!important;color:#e7e2eb!important}#ksp-m .ksv-choice input{accent-color:#d92ef1}#ksp-m .ksv-why{color:#db4bf2!important}#ksp-m .ksv-why:hover{text-shadow:0 0 10px rgba(217,46,241,.5)}#ksp-m .ksv-whybox,#ksp-m .ksv-tip{border:1px solid rgba(217,46,241,.18);background:rgba(151,18,171,.08)!important;color:#c9c1ce!important}#ksp-m .ksv-doctype{border-color:rgba(255,255,255,.09)!important;background:#09090d!important;color:#e7e2eb!important;transition:border-color .18s,background .18s,box-shadow .18s}#ksp-m .ksv-doctype:hover{border-color:rgba(217,46,241,.42)!important;background:#100b14!important}#ksp-m .ksv-doctype.selected{border-color:#d92ef1!important;background:rgba(151,18,171,.13)!important;box-shadow:inset 0 0 15px rgba(217,46,241,.08),0 0 11px rgba(217,46,241,.1)}#ksp-m .ksv-radio{border-color:rgba(255,255,255,.38)!important;background:#111018!important}#ksp-m .ksv-doctype.selected .ksv-radio{border-color:#d92ef1!important}#ksp-m .ksv-doctype.selected .ksv-radio:after{background:#d92ef1!important;box-shadow:0 0 9px rgba(217,46,241,.8)}#ksp-m .ksv-docsummary{border:1px solid rgba(255,255,255,.1);background:#09090d!important;color:#eee8f2!important}#ksp-m .ksv-edit{color:#d9cfe0!important}#ksp-m .ksv-upload{border-color:rgba(217,46,241,.38)!important;background:rgba(9,9,13,.9)!important;transition:border-color .18s,background .18s,box-shadow .18s}#ksp-m .ksv-upload:hover,#ksp-m .ksv-upload:focus-within{border-color:#d92ef1!important;background:#100b14!important;box-shadow:0 0 14px rgba(217,46,241,.12)}#ksp-m .ksv-upload-text b{color:#f3f0f5!important}#ksp-m .ksv-upload-text em{color:#db4bf2!important}#ksp-m .ksv-upload-icon{background:rgba(151,18,171,.14)!important;color:#d8c9df!important}#ksp-m .ksv-upload.has-file{border-color:#72d6ab!important;background:rgba(33,91,67,.13)!important}#ksp-m .ksv-upload.has-file .ksv-upload-icon{background:rgba(33,161,104,.17)!important;color:#72d6ab!important}#ksp-m .ksv-filehint,#ksp-m .ksv-required{color:#aaa3ad!important}#ksp-m .ksv-action{border-top:1px solid rgba(255,255,255,.07);background:linear-gradient(180deg,rgba(17,14,23,.92),#101016)!important}#ksp-m .ksv-primary{border:1px solid #bd00e7!important;background:linear-gradient(180deg,rgba(80,0,91,.88),rgba(28,0,31,.94))!important;box-shadow:inset 0 0 16px rgba(222,0,255,.24),0 0 11px rgba(220,0,255,.3)!important;color:#f8f4fa!important;transition:transform .18s,filter .18s,box-shadow .18s}#ksp-m .ksv-primary:not(:disabled):hover{filter:brightness(1.17);box-shadow:inset 0 0 19px rgba(231,0,255,.34),0 0 17px rgba(220,0,255,.46)!important}#ksp-m .ksv-primary:not(:disabled):active{transform:scale(.985)}#ksp-m .ksv-primary:disabled{border-color:rgba(255,255,255,.08)!important;background:#34303a!important;box-shadow:none!important;color:#89828e!important}#ksp-m .ksv-footer{color:#918b9d!important}#ksp-m .ksv-brand{color:#ded5e5!important}#ksp-m .ksv-complete-sub{margin:10px 0;color:#aaa7af;font-size:13px;line-height:1.7}#ksp-m .ksv-checkmark{border:1px solid rgba(217,46,241,.45);background:rgba(151,18,171,.16)!important;color:#f4b3fc!important;box-shadow:0 0 19px rgba(217,46,241,.18)}#ksp-m .ksv-menu{border-color:rgba(217,46,241,.25)!important;background:#111018!important;box-shadow:0 8px 26px #0008!important}#ksp-m .ksv-menu button{background:transparent!important;color:#eee8f2!important}#ksp-m .ksv-menu button:hover{background:rgba(217,46,241,.1)!important}';
     theme.textContent+='#ksp-m .ksv-iconbtn svg{display:block;width:20px;height:20px}#ksp-m .ksv-upload-icon svg{display:block;width:26px;height:26px}'+
       '#ksp-m .ksv-upload[data-upload]{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:12px!important;min-height:0!important;cursor:default}#ksp-m .ksv-upload-heading{display:flex;align-items:center;gap:10px;width:100%}#ksp-m .ksv-upload-heading .ksv-upload-text{flex:1;min-width:0}#ksp-m .ksv-upload-heading .ksv-upload-icon{width:48px;height:48px;border-radius:14px}#ksp-m .ksv-upload-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}#ksp-m .ksv-upload-action{position:relative;display:flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:8px 7px;border:1px solid rgba(211,169,255,.22);border-radius:11px;background:rgba(255,255,255,.035);color:#ece7f0;font-size:11px;font-weight:700;cursor:pointer;transition:border-color .18s,background .18s}#ksp-m .ksv-upload-action:hover,#ksp-m .ksv-upload-action:focus-within{border-color:#d92ef1;background:rgba(151,18,171,.12)}#ksp-m .ksv-upload-action svg{width:16px;height:16px;flex:none}#ksp-m .ksv-upload-action input{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;opacity:0!important;cursor:pointer!important;padding:0!important;z-index:2!important}#ksp-m .ksv-pending-card{display:grid;gap:5px;margin:14px 0;padding:14px;border:1px solid rgba(217,46,241,.25);border-radius:13px;background:rgba(151,18,171,.08);text-align:right}#ksp-m .ksv-pending-card span{font-size:11px;color:#aaa3ad}#ksp-m .ksv-pending-card strong{font-size:14px;color:#f0ceff}#ksp-m .ksv-pending-card p{margin:0;font-size:12px;line-height:1.75;color:#c9c1ce}';
+    theme.textContent+='#ksp-m.ksv-identity-fullscreen{inset:0!important;align-items:stretch!important;justify-content:stretch!important;padding:0!important}#ksp-m.ksv-identity-fullscreen .ksv-shell{box-sizing:border-box!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;max-height:none!important;min-height:100vh!important;min-height:100dvh!important;margin:0!important;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)!important;border:0!important;border-radius:0!important;box-shadow:none!important}#ksp-m.ksv-identity-fullscreen .ksv-head,#ksp-m.ksv-identity-fullscreen .ksv-panel,#ksp-m.ksv-identity-fullscreen .ksv-action{box-sizing:border-box!important;width:min(100%,920px)!important;margin-left:auto!important;margin-right:auto!important}#ksp-m.ksv-identity-fullscreen .ksv-panel{border-radius:0!important}#ksp-m.ksv-identity-fullscreen .ksv-head{padding-left:max(18px,env(safe-area-inset-left,0px))!important;padding-right:max(18px,env(safe-area-inset-right,0px))!important}#ksp-m.ksv-identity-fullscreen .ksv-scroll{padding-left:clamp(18px,5vw,42px)!important;padding-right:clamp(18px,5vw,42px)!important}#ksp-m.ksv-identity-fullscreen .ksv-action{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))!important}';
     document.head.appendChild(theme);
   }
   var flowModal=null;
@@ -6770,7 +6790,7 @@ function kycSheet(){
   function localDateValue(date){return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0')}
   function validBirth(){if(state.birthMode==='age')return /^\d{1,3}$/.test(state.age)&&Number(state.age)<=130;var d=state.dob?new Date(state.dob+'T12:00:00'):null,limit=new Date();limit.setHours(23,59,59,999);return !!d&&!isNaN(d.getTime())&&d<=limit}
   function validPersonal(){return state.first.trim().length>0&&state.last.trim().length>0&&!!state.nationality&&validBirth()}
-  function validPage(){if(state.page===0)return !!state.residence;if(state.page===1)return validPersonal();if(state.page===2)return !!state.docType&&!!state.issueCountry;if(state.page===3)return filesReady();return true}
+  function validPage(){if(state.page===0)return !!state.residence;if(state.page===1)return validPersonal();if(state.page===2)return !!state.docType&&!!state.issueCountry;if(state.page===3)return !!state.docType&&!!state.issueCountry&&validPersonal();return true}
   function titleAndDescription(title,desc){return '<h2 class="ksv-title">'+title+'</h2><p class="ksv-subtitle">'+desc+'</p>'}
   function uploadCard(key,title){
     var f=state.files[key],accept='.jpg,.jpeg,.png,.webp,.heic,image/jpeg,image/png,image/webp,image/heic';
@@ -6806,24 +6826,28 @@ function kycSheet(){
     }else if(state.page===3){
       var selectedType=types.filter(function(t){return t[0]===state.docType})[0];
       var country=countries.filter(function(c){return c[0]===state.issueCountry})[0]||countries[0];
-      body=titleAndDescription('تحميل مستند','تأكد من أن جميع المعلومات الواردة في الصورة مرئية وسهلة القراءة')+
-        '<label class="ksv-label">نوع المستند</label><div class="ksv-docsummary"><span>'+country[1]+'　'+(selectedType?selectedType[1]:'')+'</span><button type="button" class="ksv-edit" data-edit aria-label="تعديل نوع المستند">✎</button></div>'+
-        uploadCard('front','الوجه الأمامي')+(state.docType==='passport'?'':uploadCard('back','الوجه الخلفي'))+
-        '<p class="ksv-filehint">JPG، PNG، WEBP أو HEIC (الحد الأقصى 4 MB للصورة)<br>لا ترفع صورًا غير واضحة أو مقصوصة.</p>';
+      var nationality=countries.filter(function(c){return c[0]===state.nationality})[0];
+      var fullName=[state.first,state.middle,state.last].filter(Boolean).join(' ');
+      var birthInfo=state.birthMode==='age'?'العمر: '+state.age:'تاريخ الميلاد: '+state.dob;
+      body=titleAndDescription('مراجعة البيانات وإرسالها','لا حاجة لرفع صور الوثائق؛ ستُرسل المعلومات التالية فقط للمراجعة.')+
+        '<div class="ksv-pending-card"><span>الاسم الكامل</span><strong>'+esc(fullName)+'</strong><p>الجنسية: '+esc(nationality?nationality[2]:state.nationality)+'</p></div>'+
+        '<div class="ksv-pending-card"><span>العمر أو تاريخ الميلاد</span><strong>'+esc(birthInfo)+'</strong><p>بلد الإقامة: '+(state.residence==='US'?'الولايات المتحدة الأمريكية':'بلد آخر')+'</p></div>'+
+        '<div class="ksv-pending-card"><span>بيانات المستند</span><strong>'+esc(country[2]+' · '+(selectedType?selectedType[1]:''))+'</strong><p>سيُرسل الاسم والعمر والجنسية وبيانات المستند فقط، دون صور.</p></div>';
     }else{
-      body='<div class="ksv-complete"><div class="ksv-checkmark">✓</div>'+titleAndDescription('تم استلام طلب التحقق','تم حفظ بياناتك ومستنداتك وإرسال الطلب للمراجعة.')+
-        '<div class="ksv-pending-card"><span>حالة الطلب</span><strong>قيد المعالجة الآن</strong><p>تتم مراجعة بياناتك ومستنداتك. ستظهر حالة «موثّق» في ملفك الشخصي بعد الموافقة.</p></div>'+
+      body='<div class="ksv-complete"><div class="ksv-checkmark">✓</div>'+titleAndDescription('تم استلام بياناتك','أُرسلت بياناتك الشخصية فقط إلى فريق المراجعة.')+
+        '<div class="ksv-pending-card"><span>حالة الطلب</span><strong>قيد المراجعة</strong><p>بعد اعتماد الطلب ستظهر عبارة «تم التوثيق» في ملفك الشخصي وستُقفل خانة التحقق.</p></div>'+
         '<p class="ksv-complete-sub">يمكنك العودة إلى حسابك الآن.</p></div>';
     }
-    var primary=state.page===3?(filesReady()?'متابعة':state.files.front?'تحميل الوجه الخلفي':'تحميل الوجه الأمامي'):state.page===4?'العودة إلى الحساب':'متابعة';
-    var primaryAction=state.page===4?'data-finish':'data-next';
-    var disabled=state.page<3&&!validPage()?' disabled':'';
+    var primary=state.page===3?'إرسال البيانات للمراجعة':state.page===4?'العودة إلى الحساب':'متابعة';
+    var primaryAction=state.page===3?'data-kyc-submit':state.page===4?'data-finish':'data-next';
+    var disabled=!validPage()?' disabled':'';
     var whyHelp=state.showHelp?'<div class="ksv-menu"><button type="button" data-helpcenter>فتح مركز المساعدة</button><button type="button" data-helpclose>إغلاق</button></div>':'';
+    window.__veloxKycFormData={fullName:fullName||[state.first,state.middle,state.last].filter(Boolean).join(' '),age:state.birthMode==='age'?state.age:'',dateOfBirth:state.birthMode==='date'?state.dob:'',nationality:nationality?nationality[2]:state.nationality,residence:state.residence==='US'?'الولايات المتحدة الأمريكية':'بلد آخر',docType:selectedType?selectedType[1]:state.docType,issueCountry:country?country[2]:state.issueCountry};
     var html='<div class="ksv-flow" dir="rtl">'+head+whyHelp+'<section class="ksv-panel"><div class="ksv-scroll">'+body+'</div><div class="ksv-action">'+
       (state.page===3?'<p class="ksv-required"><em>*</em> الحقول مطلوبة</p>':'')+
       '<button type="button" class="ksv-primary" '+primaryAction+disabled+'>'+primary+'</button></div></section><div class="ksv-footer">واجهة تحقق الهوية <span class="ksv-brand">VeloXCore</span></div>'+(state.countryPickerId?countryPickerMarkup():'')+'</div>';
     var m=flowModal;
-    if(!m){m=sheet(html);flowModal=m;var shell=m.querySelector('.sh');if(shell)shell.classList.add('ksv-shell')}
+    if(!m){m=sheet(html);flowModal=m;m.classList.add('ksv-identity-fullscreen');var shell=m.querySelector('.sh');if(shell)shell.classList.add('ksv-shell')}
     else{var current=m.querySelector('.ksv-flow');if(current)current.outerHTML=html}
     var close=m.querySelector('[data-x]');if(close)close.onclick=function(){detachCountryViewport();closeSheet()};
     var help=m.querySelector('[data-help]');if(help)help.onclick=function(){state.showHelp=!state.showHelp;render()};
@@ -6865,7 +6889,7 @@ function kycSheet(){
 function rowEl(id){try{return document.querySelector('#ksp [data-a="'+id+'"]')}catch(e){return null}}
 function setSub(row,txt){if(!row)return;var t=row.querySelector('.tx .mut');if(!t){var tx=row.querySelector('.tx');if(!tx)return;t=document.createElement('span');t.className='mut';tx.appendChild(t)}if(t.textContent!==txt)t.textContent=txt}
 function setSw(row,on){if(!row)return;var s=row.querySelector('.sw');if(s&&s.classList.contains('on')!==!!on)s.classList.toggle('on',!!on)}
-function kycLabel(){var remote=String(prof().verificationStatus||'').trim().toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/\s+/g,' ');if(['verified','approved','approve','accepted','مقبول','موثق','تم','تم التحقق','تم التوثيق','موافقة','موافق','معتمد','موثق بالكامل'].indexOf(remote)>=0)return 'موثّق بالكامل';if(['pending','review','under review','قيد المراجعة','قيد المعالجة','قيد الانتظار','معلق'].indexOf(remote)>=0)return 'قيد المعالجة · يتم التحقق الآن';if(['rejected','مرفوض','رفض'].indexOf(remote)>=0)return 'مرفوض · راجع حالة طلبك';var k=kycState(),l=Number(k.level)||0;if(k.status==='pending')return 'قيد المعالجة · يتم التحقق الآن';if(l>=3)return 'موثّق بالكامل · المستوى 3';if(l>0)return 'موثّق · المستوى '+l;return 'لم يتم التحقق منه · أكمل الخطوات'}
+function kycLabel(){var remote=String(prof().verificationStatus||'').trim().toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/\s+/g,' ');if(kycIsVerified())return 'تم التوثيق';if(['pending','review','under review','قيد المراجعة','قيد المعالجة','قيد الانتظار','معلق'].indexOf(remote)>=0)return 'قيد المعالجة · يتم التحقق الآن';if(['rejected','مرفوض','رفض'].indexOf(remote)>=0)return 'مرفوض · راجع حالة طلبك';var k=kycState(),l=Number(k.level)||0;if(k.status==='pending')return 'قيد المعالجة · يتم التحقق الآن';if(l>=3)return 'موثّق بالكامل · المستوى 3';if(l>0)return 'موثّق · المستوى '+l;return 'لم يتم التحقق منه · أكمل الخطوات'}
 function inviteLabel(){var c=inviteState().code||prof().inviteCode||'';return c||'لم يتم توفيره'}
 function antiLabel(){var c=antiState().code||'';return c?('مفعّل · '+c.replace(/./g,'•')):'لم يتم التعيين'}
 function syncRows(){
@@ -7848,42 +7872,6 @@ setTimeout(function(){if(!primed)armPool(false)},800);
 .kw-overlay:not(.kw-history-mode) .kw-edit{
   color:#bd00e7;
 }
-.kw-overlay:not(.kw-history-mode) .kw-result{
-  display:grid;
-  place-items:center;
-  min-height:260px;
-  text-align:center;
-}
-.kw-overlay:not(.kw-history-mode) .kw-status-card{
-  width:min(100%,360px);
-  padding:24px 18px;
-  border:1px solid var(--kw-border);
-  border-radius:20px;
-  background:var(--kw-brand-soft);
-}
-.kw-overlay:not(.kw-history-mode) .kw-status-icon{
-  display:grid;
-  place-items:center;
-  width:48px;
-  height:48px;
-  margin:0 auto 14px;
-  border-radius:50%;
-  background:rgba(62,214,164,.14);
-  color:#42d6a4;
-  font-size:25px;
-  font-weight:800;
-}
-.kw-overlay:not(.kw-history-mode) .kw-status-card strong{
-  display:block;
-  color:#42d6a4;
-  font-size:18px;
-}
-.kw-overlay:not(.kw-history-mode) .kw-status-card p{
-  margin:9px 0 0;
-  color:var(--kw-muted);
-  font-size:13px;
-  line-height:1.8;
-}
 </style>
 
 <style id="ks-magenta-preference-sheets">
@@ -8201,16 +8189,29 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
   'use strict';
 
   async function apiPost(body) {
+    let controller = null;
+    let timeoutId = null;
     try {
-      const res = await fetch(API_URL, {
+      const options = {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(body)
-      });
+      };
+      if (body && body.action === 'submitVerification' && typeof AbortController === 'function') {
+        controller = new AbortController();
+        options.signal = controller.signal;
+        timeoutId = setTimeout(function () { controller.abort(); }, 45000);
+      }
+      const res = await fetch(API_URL, options);
       return await res.json();
     } catch (err) {
       console.error('API Post Error:', err);
+      if (body && body.action === 'submitVerification' && err && err.name === 'AbortError') {
+        return { ok: false, error: 'identity_submit_timeout', message: 'انتهت مهلة إرسال بيانات التحقق. تحقق من الاتصال ثم أعد المحاولة.' };
+      }
       return { ok: false, error: 'network_error', message: 'تعذر الاتصال بالخادم' };
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
   }
 
@@ -8322,6 +8323,7 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
       expired: 'انتهت صلاحية الرمز. اطلب رمزًا جديدًا.',
       cooldown: 'انتظر قليلًا قبل طلب رمز آخر.',
       network_error: 'تعذر الاتصال بالخادم.',
+      identity_submit_timeout: 'انتهت مهلة إرسال بيانات التحقق. تحقق من الاتصال ثم أعد المحاولة.',
       unauthorized: 'بيانات الدخول غير صحيحة.',
       invalid_credentials: 'بيانات الدخول غير صحيحة.'
     };
@@ -8372,15 +8374,33 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
     }
   }
 
-  function showToast(text, kind) {
+  function showToast(text, kind, success) {
     let node;
-    if (kind === 'deposit' || kind === 'withdrawal') {
+    if (kind === 'deposit' || kind === 'withdrawal' || (kind === 'invest' && success)) {
+      if (kind === 'invest') {
+        const oldInvestToast = document.querySelector('.ks-invest-toast');
+        if (oldInvestToast) oldInvestToast.remove();
+      }
       node = document.querySelector('.dep-toast');
       if (!node) {
         node = document.createElement('div');
-        node.className = 'dep-toast';
         node.setAttribute('role', 'status');
         document.body.appendChild(node);
+      }
+      node.className = 'dep-toast' + (success ? ' dep-toast-success' : '');
+      if (success) {
+        node.dir = 'rtl';
+        const icon = document.createElement('span');
+        icon.className = 'dep-toast-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.className = 'dep-toast-message';
+        label.textContent = text;
+        node.textContent = '';
+        node.appendChild(icon);
+        node.appendChild(label);
+      } else {
+        node.textContent = text;
       }
     } else if (kind === 'invest') {
       node = document.querySelector('.ks-invest-toast');
@@ -8399,7 +8419,7 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
       }
       node.classList.add('show');
     }
-    node.textContent = text;
+    if (kind !== 'deposit' && kind !== 'withdrawal' && !(kind === 'invest' && success)) node.textContent = text;
     clearTimeout(node._apiTimer);
     node._apiTimer = setTimeout(function () {
       if (kind === 'profile') node.classList.remove('show');
@@ -8644,26 +8664,59 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
     return element ? String(element.value || '').trim() : '';
   }
 
+  function compactKycFile(file) {
+    if (!file || file.size <= 1400 * 1024 || !window.createImageBitmap ||
+        typeof File !== 'function' || /image\/heic/i.test(file.type) || /\.heic$/i.test(file.name)) {
+      return Promise.resolve(file);
+    }
+    return window.createImageBitmap(file).then(function (bitmap) {
+      const maxSide = 1800;
+      const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) {
+        if (bitmap.close) bitmap.close();
+        return file;
+      }
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      if (bitmap.close) bitmap.close();
+      return new Promise(function (resolve) {
+        canvas.toBlob(function (blob) {
+          if (!blob || blob.size >= file.size) return resolve(file);
+          const baseName = safeText(file.name).replace(/\.[^.]+$/, '') || 'identity-document';
+          resolve(new File([blob], baseName + '.jpg', {
+            type: 'image/jpeg',
+            lastModified: file.lastModified || Date.now()
+          }));
+        }, 'image/jpeg', 0.84);
+      });
+    }).catch(function () { return file; });
+  }
+
   function readKycFile(file, key) {
-    return new Promise(function (resolve, reject) {
-      const reader = new FileReader();
-      reader.onload = function () {
-        const dataUrl = String(reader.result || '');
-        const comma = dataUrl.indexOf(',');
-        if (comma < 0) return reject(new Error('تعذر قراءة صورة الوثيقة'));
-        const inferredMime = file.type ||
-          (/\.heic$/i.test(file.name) ? 'image/heic' :
-            (/\.png$/i.test(file.name) ? 'image/png' :
-              (/\.webp$/i.test(file.name) ? 'image/webp' : 'image/jpeg')));
-        resolve({
-          key: key,
-          name: safeText(file.name),
-          mimeType: safeText(inferredMime),
-          base64: dataUrl.slice(comma + 1)
-        });
-      };
-      reader.onerror = function () { reject(new Error('تعذر قراءة صورة الوثيقة')); };
-      reader.readAsDataURL(file);
+    return compactKycFile(file).then(function (uploadFile) {
+      return new Promise(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function () {
+          const dataUrl = String(reader.result || '');
+          const comma = dataUrl.indexOf(',');
+          if (comma < 0) return reject(new Error('تعذر قراءة صورة الوثيقة'));
+          const inferredMime = uploadFile.type ||
+            (/\.heic$/i.test(uploadFile.name) ? 'image/heic' :
+              (/\.png$/i.test(uploadFile.name) ? 'image/png' :
+                (/\.webp$/i.test(uploadFile.name) ? 'image/webp' : 'image/jpeg')));
+          resolve({
+            key: key,
+            name: safeText(uploadFile.name),
+            mimeType: safeText(inferredMime),
+            base64: dataUrl.slice(comma + 1)
+          });
+        };
+        reader.onerror = function () { reject(new Error('تعذر قراءة صورة الوثيقة')); };
+        reader.readAsDataURL(uploadFile);
+      });
     });
   }
 
@@ -8746,7 +8799,7 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
       } catch (ignore) {}
       showInvestMessage(screen, '');
       if (input) input.value = '';
-      showToast(safeText(result.message || 'تم إرسال الكود بنجاح.'), 'invest');
+      showToast(safeText(result.message || 'تم إرسال الكود بنجاح.'), 'invest', true);
       window.dispatchEvent(new Event('ks-pull-refresh'));
       apiGet({ action: 'getCodes', username: user.username, uid: user.uid, email: user.email })
         .then(function (rows) {
@@ -8988,7 +9041,7 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
             return;
           }
           try { localStorage.removeItem(referenceKey); } catch (ignore) {}
-          showToast(safeText(result.message || 'تم إرسال الإيداع للمراجعة.'), 'deposit');
+          showToast('طلبك قيد المعالجة', 'deposit', true);
           loadDashboardData();
           clearDepositFlow();
         }, '...');
@@ -9072,28 +9125,24 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
             storeBalances({ balance: newBalance });
             storeProfile({ balance: newBalance });
           }
+          showToast('طلبك قيد المعالجة', 'withdrawal', true);
           window.dispatchEvent(new Event('ks-pull-refresh'));
           refreshServerBalance();
         }, '...');
         return;
       }
 
-      if (button.matches('.ksv-primary[data-next]') && button.closest('#ksp-m') && button.closest('#ksp-m').querySelector('.ksv-upload')) {
+      if (button.matches('.ksv-primary[data-kyc-submit]') && button.closest('#ksp-m')) {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
-        const fullName = ['ksv-first', 'ksv-middle', 'ksv-last']
+        const formData = window.__veloxKycFormData || {};
+        const fullName = safeText(formData.fullName || ['ksv-first', 'ksv-middle', 'ksv-last']
           .map(function (id) { return safeText(kycValues[id]).trim(); })
-          .filter(Boolean).join(' ');
-        const docType = kycValues.docType || '';
-        const selectedFiles = window.__veloxKycFiles || {};
-        const requiredFileKeys = String(docType).toLowerCase() === 'passport' ? ['front'] : ['front', 'back'];
-        if (!fullName || !docType) {
+          .filter(Boolean).join(' ')).trim();
+        const docType = safeText(formData.docType || kycValues.docType || '').trim();
+        if (!fullName || !docType || !formData.nationality || !(formData.age || formData.dateOfBirth)) {
           showToast('أكمل بيانات الهوية المطلوبة.');
-          return;
-        }
-        if (!requiredFileKeys.every(function (key) { return !!selectedFiles[key]; })) {
-          showToast('أرفق صور الوثيقة المطلوبة قبل المتابعة.');
           return;
         }
         withBusy(button, async function () {
@@ -9105,15 +9154,6 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
             clientReference = 'KYC-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
             try { sessionStorage.setItem(referenceKey, clientReference); } catch (ignore) {}
           }
-          let docFiles = [];
-          try {
-            docFiles = await Promise.all(requiredFileKeys.filter(function (key) {
-              return !!selectedFiles[key];
-            }).map(function (key) { return readKycFile(selectedFiles[key], key); }));
-          } catch (fileError) {
-            showToast(safeText(fileError && fileError.message || 'تعذر قراءة صور الوثيقة.'));
-            return;
-          }
           const result = await apiPost({
             action: 'submitVerification',
             clientReference: clientReference,
@@ -9122,7 +9162,11 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
             email: user.email,
             fullName: fullName,
             docType: docType,
-            docFiles: docFiles
+            age: safeText(formData.age || ''),
+            dateOfBirth: safeText(formData.dateOfBirth || ''),
+            nationality: safeText(formData.nationality || ''),
+            residence: safeText(formData.residence || ''),
+            issueCountry: safeText(formData.issueCountry || '')
           });
           if (!result || !(result.ok === true || result.success === true) || result.error) {
             showToast(apiErrorMessage(result));
