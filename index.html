@@ -763,6 +763,8 @@ html[lang="ar"] .feature-card-copy { unicode-bidi:plaintext; }
 #ksp .mut{color:var(--muted-foreground);font-size:12px}
 #ksp .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:10.5px;font-weight:700;background:oklch(69% .17 150/.14);color:var(--positive);border:1px solid oklch(69% .17 150/.3)}
 #ksp .badge.w{background:oklch(77% .15 64/.14);color:var(--coin-btc);border-color:oklch(77% .15 64/.3)}
+#ksp .badge.pending{background:oklch(77% .15 64/.14);color:var(--coin-btc);border-color:oklch(77% .15 64/.3)}
+#ksp .badge.rejected{background:oklch(60% .2 25/.14);color:var(--negative);border-color:oklch(60% .2 25/.3)}
 #ksp .edit{margin-left:auto;background:oklch(100% 0 0/.08);border:1px solid var(--border);color:var(--foreground);border-radius:12px;padding:7px 12px;font-weight:700;font-size:12px;cursor:pointer}
 #ksp .stats{display:grid;grid-template-columns:repeat(4,1fr);margin-top:16px;border-top:1px solid var(--divider)}
 #ksp .stats div{padding:12px 4px 0;text-align:center}#ksp .stats b{display:block;font-size:15px}
@@ -825,10 +827,17 @@ function sw(k){return '<span class="sw'+(S[k]?' on':'')+'"></span>'}
 function val(v){return '<span class="val">'+v+chev+'</span>'}
 function lastLogin(){var d=new Date(Date.now()-1000*60*7);return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
 KS_PROFILE_APP_ICON=KS_PROFILE_APP_ICON.replace('Tq18JrfTJ','Tq18zJrfTJ');
+function profileKycBadge(){
+ var raw='';try{var p=JSON.parse(localStorage.getItem('ks_profile_v1')||'{}');raw=String(p.verificationStatus||'').trim().toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/\s+/g,' ')}catch(e){}
+ if(['verified','approved','approve','accepted','مقبول','موثق','تم','تم التحقق','تم التوثيق','موافقة','موافق','معتمد','موثق بالكامل'].indexOf(raw)>=0)return{label:'تم التوثيق',tone:'verified'};
+ if(['pending','review','under review','قيد المراجعة','قيد المعالجة','قيد الانتظار','معلق'].indexOf(raw)>=0)return{label:'قيد المراجعة',tone:'pending'};
+ if(['rejected','reject','مرفوض','رفض'].indexOf(raw)>=0)return{label:'مرفوض',tone:'rejected'};
+ return{label:'لم يتم التحقق منه',tone:'w'};
+}
 function render(root){
-var kycL=['Unverified','Basic','Verified','Advanced'][S.kyc],pct=[10,45,80,100][S.kyc];
+var kycBadge=profileKycBadge(),kycL=kycBadge.label;
 root.innerHTML=
-'<div class="c hero"><div class="row1"><div class="av"><span class="app-avatar-fallback" aria-hidden="true">'+ini()+'</span><img src="'+KS_PROFILE_APP_ICON+'" alt="" width="62" height="62" decoding="async" onload="this.parentNode.querySelector(\'.app-avatar-fallback\').remove()" onerror="this.remove()"><i></i></div><div style="min-width:0"><div class="nm">'+esc(S.name)+'</div><div class="mut">'+esc(S.email)+'</div><div style="margin-top:6px;display:flex;gap:6px"><span class="badge'+(S.kyc<2?' w':'')+'">'+ic('shield').replace('<svg','<svg width="11" height="11"')+' '+kycL+'</span><span class="badge" style="background:oklch(57% .28 294/.16);color:oklch(80% .15 300);border-color:oklch(57% .28 294/.35)" data-vip>VIP '+vipTierFromBalance()+'</span></div></div></div>'+
+'<div class="c hero"><div class="row1"><div class="av"><span class="app-avatar-fallback" aria-hidden="true">'+ini()+'</span><img src="'+KS_PROFILE_APP_ICON+'" alt="" width="62" height="62" decoding="async" onload="this.parentNode.querySelector(\'.app-avatar-fallback\').remove()" onerror="this.remove()"><i></i></div><div style="min-width:0"><div class="nm">'+esc(S.name)+'</div><div class="mut">'+esc(S.email)+'</div><div style="margin-top:6px;display:flex;gap:6px"><span class="badge '+kycBadge.tone+'">'+ic('shield').replace('<svg','<svg width="11" height="11"')+' '+kycL+'</span><span class="badge" style="background:oklch(57% .28 294/.16);color:oklch(80% .15 300);border-color:oklch(57% .28 294/.35)" data-vip>VIP '+vipTierFromBalance()+'</span></div></div></div>'+
 '<div class="uid">UID: <span dir="ltr" style="color:var(--foreground);font-weight:700">'+esc(String(S.uid||KS_HOME_UID).replace(/^KS-/,''))+'</span><button data-a="cuid" aria-label="Copy UID" title="Copy UID" style="display:grid;place-items:center;padding:2px">'+ic('copy').replace('<svg','<svg width="15" height="15"')+'</button><span style="margin-left:auto">Last login '+lastLogin()+'</span></div>'+
 '</div>'+
 '<div class="c ref" data-a="ref" role="button" tabindex="0" style="cursor:pointer"><div class="ic" style="background:linear-gradient(115deg,#8d6cf0,#684bd7 55%,#5541c5);color:#fff">'+ic('share')+'</div><div class="tx"><span class="mut">Referral code · earn 20% fees</span><div class="code">'+esc(S.referralCode||'KS7Q2X')+'</div></div><button class="btn" data-a="ref" type="button">Invite</button></div>'+
@@ -849,6 +858,7 @@ function vipBadgeSync(){var el=document.querySelector('#ksp .badge[data-vip]');i
 window.addEventListener('ks-balance-change',vipBadgeSync);
 function sesActiveText(){var n=1;try{if(window.ksSessionsCount)n=window.ksSessionsCount()||1}catch(e){n=1}return n+' active'}
 window.addEventListener('ks-auth-profile-update',function(e){var u=e.detail||{};S.name=u.username||u.name||S.name;S.email=u.email||S.email;S.country=u.country||'';S.inviteCode=u.inviteCode||'';S.invitedByName=u.invitedByName||'';S.referralCode=u.referralCode||S.referralCode;S.phone=u.phone||'';S.uid=u.uid||S.uid;S.kyc=Number.isFinite(u.kyc)?u.kyc:0;save();rr()});
+window.addEventListener('ks-profile-data-updated',function(){try{var p=JSON.parse(localStorage.getItem('ks_profile_v1')||'{}');if(p.name)S.name=p.name;if(p.email)S.email=p.email;if(p.uid)S.uid=p.uid;if(p.verificationStatus!=null)S.verificationStatus=p.verificationStatus;save();rr()}catch(e){}});
 var helpFaq=[
 ['How do I create and secure my VeloXCore account?','Create an account with a valid email address and a strong, unique password. Enable two-factor authentication and an anti-phishing code from Security settings before funding the account.'],
 ['What information is required to open a live account?','A valid email address and basic profile details are required. Identity documents and proof of address may be requested before higher limits or withdrawals become available.'],
@@ -6708,6 +6718,7 @@ function inviteSheet(){
 /* ---------- KYC ---------- */
 function kycState(){return ls(KK,{level:0,status:'none',docType:'id',name:'',dob:'',country:'',address:'',files:{},submittedAt:'',reviewedAt:''})}
 var kycStatusCheckInFlight=false;
+var kycStatusCheckedAt=0;
 function kycNormalizedStatus(value){
   return String(value||'').trim().toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/\s+/g,' ');
 }
@@ -6723,19 +6734,33 @@ function kycIsRejected(){
   var remote=kycNormalizedStatus(prof().verificationStatus);
   return ['rejected','reject','مرفوض','رفض'].indexOf(remote)>=0;
 }
-function kycSheet(statusChecked){
-  if(!statusChecked&&typeof window.apiGet==='function'){
-    if(kycStatusCheckInFlight)return;
-    kycStatusCheckInFlight=true;
-    var current=prof();
-    window.apiGet({action:'getProfile',username:current.username||current.name||'',email:current.email||'',uid:current.uid||''}).then(function(result){
-      var data=result&&(result.user||result.account||result.profile||result.data||result);
-      if(result&&result.ok!==false&&data&&data.verificationStatus)setProf({verificationStatus:data.verificationStatus});
-      queueSync();
-      kycSheet(true);
-    }).catch(function(){kycSheet(true)}).finally(function(){kycStatusCheckInFlight=false});
-    return;
-  }
+function refreshKycStatus(force){
+  if(typeof window.apiGet!=='function'||kycStatusCheckInFlight)return;
+  if(!force&&Date.now()-kycStatusCheckedAt<30000)return;
+  var current=prof();
+  if(!current.username&&!current.name&&!current.email&&!current.uid)return;
+  kycStatusCheckInFlight=true;
+  kycStatusCheckedAt=Date.now();
+  window.apiGet({action:'getProfile',username:current.username||current.name||'',email:current.email||'',uid:current.uid||''}).then(function(result){
+    var data=result&&(result.user||result.account||result.profile||result.data||result);
+    if(result&&result.ok!==false&&data&&data.verificationStatus!=null){
+      var next=String(data.verificationStatus);
+      if(String(prof().verificationStatus||'')!==next){
+        setProf({verificationStatus:next});
+        window.dispatchEvent(new Event('ks-profile-data-updated'));
+        if(flowModal&&(kycIsVerified()||kycIsPending())){
+          detachCountryViewport();
+          closeSheet();
+          flowModal=null;
+          toast(kycIsVerified()?'تم التوثيق':'طلبك قيد المراجعة، وستظهر الحالة بعد قرار المراجعة.');
+        }
+      }
+    }
+    queueSync();
+  }).catch(function(){}).finally(function(){kycStatusCheckInFlight=false});
+}
+function kycSheet(){
+  refreshKycStatus(true);
   if(kycIsVerified()){toast('تم التوثيق');queueSync();return}
   if(kycIsPending()){toast('طلبك قيد المراجعة، وستظهر الحالة بعد قرار المراجعة.');queueSync();return}
   var state={page:0,residence:'',first:'',middle:'',last:'',nationality:'',dob:'',age:'',birthMode:'age',issueCountry:'',countryPickerId:'',countryQuery:'',docType:'',files:{},showWhy:false,showHelp:false};
@@ -6802,13 +6827,13 @@ function kycSheet(statusChecked){
   function localDateValue(date){return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0')}
   function validBirth(){if(state.birthMode==='age')return /^\d{1,3}$/.test(state.age)&&Number(state.age)<=130;var d=state.dob?new Date(state.dob+'T12:00:00'):null,limit=new Date();limit.setHours(23,59,59,999);return !!d&&!isNaN(d.getTime())&&d<=limit}
   function validPersonal(){return state.first.trim().length>0&&state.last.trim().length>0&&!!state.nationality&&validBirth()}
-  function validPage(){if(state.page===0)return !!state.residence;if(state.page===1)return validPersonal();if(state.page===2)return !!state.docType&&!!state.issueCountry;if(state.page===3)return !!state.docType&&!!state.issueCountry&&validPersonal();return true}
+  function validPage(){if(state.page===0)return !!state.residence;if(state.page===1)return validPersonal();if(state.page===2)return !!state.docType&&!!state.issueCountry;if(state.page===3)return !!state.docType&&!!state.issueCountry&&validPersonal()&&filesReady();return true}
   function titleAndDescription(title,desc){return '<h2 class="ksv-title">'+title+'</h2><p class="ksv-subtitle">'+desc+'</p>'}
   function uploadCard(key,title){
     var f=state.files[key],accept='.jpg,.jpeg,.png,.webp,.heic,image/jpeg,image/png,image/webp,image/heic';
-    var uploadIcon=f?'✓':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5"></path><path d="M20 16.5v1A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-1"></path></svg>';
+     var uploadIcon=f?'✓':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5"></path><path d="M20 16.5v1A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-1"></path></svg>';
     return '<div class="ksv-upload'+(f?' has-file':'')+'" data-upload="'+key+'"><div class="ksv-upload-heading">'+
-      '<span class="ksv-upload-text"><b>'+title+'</b><em>'+(f?esc(f.name):'اختياري — لن تُرسل الصورة')+'</em></span><span class="ksv-upload-icon">'+uploadIcon+'</span></div>'+
+       '<span class="ksv-upload-text"><b>'+title+' <em>*</em></b><em>'+(f?esc(f.name):'مطلوب — تحفظ الصورة على جهازك ولا تُرسل')+'</em></span><span class="ksv-upload-icon">'+uploadIcon+'</span></div>'+
       '<div class="ksv-upload-actions"><label class="ksv-upload-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"></path><circle cx="12" cy="13" r="3.2"></circle></svg><span>التصوير بالكاميرا</span><input type="file" data-file="'+key+'" accept="'+accept+'" capture="environment" aria-label="التقاط صورة '+title+'"></label>'+
       '<label class="ksv-upload-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5"></path><path d="M20 16.5v1A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-1"></path></svg><span>رفع من الجهاز</span><input type="file" data-file="'+key+'" accept="'+accept+'" aria-label="رفع صورة '+title+' من الجهاز"></label></div></div>'
   }
@@ -6841,11 +6866,11 @@ function kycSheet(statusChecked){
       var nationality=countries.filter(function(c){return c[0]===state.nationality})[0];
       var fullName=[state.first,state.middle,state.last].filter(Boolean).join(' ');
       var birthInfo=state.birthMode==='age'?'العمر: '+state.age:'تاريخ الميلاد: '+state.dob;
-      body=titleAndDescription('مراجعة البيانات وإرسالها','يمكنك اختيار صورة اختياريًا من الكاميرا أو الجهاز. الصور تبقى على جهازك ولا تُرسل؛ تُرسل البيانات المكتوبة فقط.')+
+      body=titleAndDescription('مراجعة البيانات وإرسالها','أرفق صور الهوية المطلوبة من الكاميرا أو الجهاز. الصور تبقى على جهازك ولا تُرسل؛ تُرسل البيانات المكتوبة فقط.')+
+        uploadCard('front','الوجه الأمامي')+(state.docType==='passport'?'':uploadCard('back','الوجه الخلفي'))+
         '<div class="ksv-pending-card"><span>الاسم الكامل</span><strong>'+esc(fullName)+'</strong><p>الجنسية: '+esc(nationality?nationality[2]:state.nationality)+'</p></div>'+
         '<div class="ksv-pending-card"><span>العمر أو تاريخ الميلاد</span><strong>'+esc(birthInfo)+'</strong><p>بلد الإقامة: '+(state.residence==='US'?'الولايات المتحدة الأمريكية':'بلد آخر')+'</p></div>'+
-        '<div class="ksv-pending-card"><span>بيانات المستند</span><strong>'+esc(country[2]+' · '+(selectedType?selectedType[1]:''))+'</strong><p>ستُرسل البيانات النصية فقط، دون صور.</p></div>'+
-        uploadCard('front','الوجه الأمامي')+(state.docType==='passport'?'':uploadCard('back','الوجه الخلفي'));
+        '<div class="ksv-pending-card"><span>بيانات المستند</span><strong>'+esc(country[2]+' · '+(selectedType?selectedType[1]:''))+'</strong><p>ستُرسل البيانات النصية فقط، دون صور.</p></div>';
     }else{
       body='<div class="ksv-complete"><div class="ksv-checkmark">✓</div>'+titleAndDescription('تم استلام بياناتك','أُرسلت بياناتك الشخصية فقط إلى فريق المراجعة.')+
         '<div class="ksv-pending-card"><span>حالة الطلب</span><strong>قيد المراجعة</strong><p>بعد اعتماد الطلب ستظهر عبارة «تم التوثيق» في ملفك الشخصي وستُقفل خانة التحقق.</p></div>'+
@@ -6857,7 +6882,7 @@ function kycSheet(statusChecked){
     var whyHelp=state.showHelp?'<div class="ksv-menu"><button type="button" data-helpcenter>فتح مركز المساعدة</button><button type="button" data-helpclose>إغلاق</button></div>':'';
     window.__veloxKycFormData={fullName:fullName||[state.first,state.middle,state.last].filter(Boolean).join(' '),age:state.birthMode==='age'?state.age:'',dateOfBirth:state.birthMode==='date'?state.dob:'',nationality:nationality?nationality[2]:state.nationality,residence:state.residence==='US'?'الولايات المتحدة الأمريكية':'بلد آخر',docType:selectedType?selectedType[1]:state.docType,issueCountry:country?country[2]:state.issueCountry};
     var html='<div class="ksv-flow" dir="rtl">'+head+whyHelp+'<section class="ksv-panel"><div class="ksv-scroll">'+body+'</div><div class="ksv-action">'+
-      (state.page===3?'<p class="ksv-required">صور الهوية اختيارية ولا تُرسل إلى الخادم.</p>':'')+
+      (state.page===3?'<p class="ksv-required">إرفاق صورة الهوية إلزامي لإرسال الطلب؛ لا تُرفع الصورة إلى الخادم.</p>':'')+
       '<button type="button" class="ksv-primary" '+primaryAction+disabled+'>'+primary+'</button></div></section><div class="ksv-footer">واجهة تحقق الهوية <span class="ksv-brand">VeloXCore</span></div>'+(state.countryPickerId?countryPickerMarkup():'')+'</div>';
     var m=flowModal;
     if(!m){m=sheet(html);flowModal=m;m.classList.add('ksv-identity-fullscreen');var shell=m.querySelector('.sh');if(shell)shell.classList.add('ksv-shell')}
@@ -6928,6 +6953,8 @@ function syncRows(){
 var syncT=null;
 function queueSync(){if(syncT)clearTimeout(syncT);syncT=setTimeout(syncRows,90)}
 window.addEventListener('ks-profile-data-updated',queueSync);
+window.addEventListener('ks-auth-profile-update',function(){refreshKycStatus(false)});
+setTimeout(function(){refreshKycStatus(false)},0);
 var HANDLERS={invite:inviteSheet,kyc:kycSheet,tw:twoFaManage,bio:bioManage,pwd:pwdSheet,anti:antiManage,ses:sesManage,push:pushManage};
 window.addEventListener('click',function(e){
   var t=e.target;
