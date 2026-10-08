@@ -5171,6 +5171,9 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
         }
         setHistoryItems(function(current){return [item].concat((current||[]).filter(function(existing){return historyReference(existing)!==reference}))});
         setHistoryState('ready');
+        var status=String(item.statusCode||'pending').toLowerCase();
+        setError(status==='approved'?'تم اعتماد طلب السحب':status==='rejected'?'تم رفض طلب السحب':'طلبك قيد المعالجة');
+        setStep(5);
       }
       window.addEventListener('ks-withdrawal-submitted',onWithdrawalSubmitted);
       return function(){window.removeEventListener('ks-withdrawal-submitted',onWithdrawalSubmitted)}
@@ -5307,9 +5310,10 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
   else if(step===2){content=h('main',{className:'kw-main'},h('div',{className:'kw-warning'},'يجب أن تتطابق شبكة السحب مع شبكة عنوان الاستلام.'),h('div',{className:'kw-tabs'},h(Button,{className:tab==='all'?'selected':'',onClick:function(){setTab('all')}},'الجميع'),h(Button,{className:tab==='crypto'?'selected':'',onClick:function(){setTab('crypto')}},'العملات المشفرة')),h('div',{className:'kw-row'},h('span',null,'طريقة السحب'),h('strong',{dir:'ltr'},fmt(numeric)+' USD')),h('div',{className:'kw-network-list'},networks.filter(function(n){return asset==='ALL'||n.coin===asset}).map(function(n){return h(Button,{key:n.name,className:'kw-network',onClick:function(){selectNetwork(n)},'aria-label':'اختيار '+n.name},h(Coin,{coin:n.coin}),h('span',{className:'kw-network-body'},h('strong',{dir:'ltr'},n.name),h('small',null,'الرصيد المتاح: '+fmt(bal[n.coin])+' '+n.coin),h('small',{className:'kw-network-meta'},(n.eta||'')+' · رسم تقريبي '+withdrawFee(n)+' '+n.coin)),h(Icon,{name:'chevron'}))})));}
   else if(step===3&&network){content=h('main',{className:'kw-main'},h('div',{className:'kw-heading'},h(Coin,{coin:network.coin}),h('strong',{dir:'ltr'},network.name)),h('label',{className:'kw-field'},h('span',{className:'kw-label'},'عنوان المحفظة المستقبلة'),h('div',{className:'kw-input-wrap'},h('input',{id:'kw-address',value:address,dir:'ltr',placeholder:network.name.indexOf('TRC20')>=0?'T…':network.name.indexOf('Solana')>=0?'Solana address':'0x…',autoComplete:'off',spellCheck:false,'aria-invalid':Boolean(address&&!validAddress(address.trim(),network)),onChange:function(e){setAddress(e.target.value.trim());setError('')}}),h(Button,{className:'kw-paste',onClick:paste},'لصق')),h('p',{className:'kw-note'},'يرجى إدخال عنوان الاستلام الصحيح على شبكة '+network.name+' لضمان مطابقة بيانات الدفع.'),address&&!validAddress(address.trim(),network)?h('p',{className:'kw-error'},'صيغة العنوان غير متوافقة مع الشبكة المختارة.'):null),h('label',{className:'kw-field'},h('span',{className:'kw-label'},'ملاحظات مهمة (اختياري)'),h('textarea',{value:notes,maxLength:500,placeholder:'أضف ملاحظة للطلب',onChange:function(e){setNotes(e.target.value)}})),h('div',{className:'kw-warning'},'التحقق هنا من صيغة العنوان فقط؛ تأكد من ملكية العنوان ودعم شبكة الاستلام. التحويلات المشفرة لا يمكن التراجع عنها.'));footer=h('footer',{className:'kw-footer'},h(Button,{className:'kw-primary',disabled:!validAddress(address.trim(),network),onClick:function(){go(4)}},'متابعة إلى المراجعة'));}
   else if(step===4&&network){content=h('main',{className:'kw-main'},h('div',{className:'kw-review-amount'},h('strong',{dir:'ltr'},'USD '+fmt(numeric)),h('span',null,'مبلغ السحب')),h('p',{className:'kw-label'},'طريقة السحب'),h(Button,{className:'kw-surface kw-review-method',onClick:function(){go(3)},'aria-label':'تعديل عنوان السحب'},h(Coin,{coin:network.coin}),h('span',{className:'kw-network-body'},h('strong',{dir:'ltr'},network.name),h('span',{className:'kw-address',dir:'ltr'},address)),h('span',{className:'kw-edit'},'تعديل')),row('المبلغ المحدد',fmt(numeric)+' '+network.coin),row('رسوم الشبكة','~'+withdrawFee(network)+' '+network.coin),row('رسوم VeloXCore','80%'),row('مدة المعالجة',network.eta||'حوالي 1–5 دقائق'),row('تأكيدات مطلوبة','12 تأكيدًا'),row('الحد الأدنى للسحب','10 '+network.coin),notes?h('div',{className:'kw-note'},'ملاحظات: '+notes):null,null);footer=h('footer',{className:'kw-footer'},h(Button,{className:'kw-primary',onClick:submit},'تأكيد السحب'));}
+  else if(step===5){content=h('main',{className:'kw-main kw-result'},h('div',{className:'kw-status-card',role:'status'},h('span',{className:'kw-status-icon','aria-hidden':true},'✓'),h('strong',null,error||'طلبك قيد المعالجة'),h('p',null,'تم استلام طلب السحب. يمكنك متابعة حالته من سجل السحب.')));footer=null;}
 
   if(showHistory){content=historyDetail?renderWithdrawalDetails(historyDetail):renderWithdrawalHistory();footer=null}
-  return h('div',{className:'kw-overlay'+(showHistory?' kw-history-mode':'')+(historyDetail?' kw-detail-mode':'' )},h('section',{id:'kw-dialog',className:'kw-flow',role:'dialog','aria-modal':true,'aria-labelledby':'kw-title',tabIndex:-1,lang:'ar'},h('header',{className:'kw-header'},h(Button,{className:'kw-icon','aria-label':'رجوع',onClick:back},h(Icon,{name:'back'})),h('h1',{id:'kw-title'},showHistory?(historyDetail?'تفاصيل السحب':'سجل السحب'):choose?'حساب السحب':step===3?'المعلومات الإضافية':step===4?'مراجعة السحب':step===5?'طلب السحب':'السحب'),showHistory?null:h(Button,{className:'kw-icon kw-history-open','aria-label':'فتح سجل السحب',title:'سجل السحب',onClick:openHistory},h(Icon,{name:'history'}))),step<5&&!choose&&!showHistory?h('nav',{className:'kw-progress','aria-label':'مراحل السحب'},['المبلغ','الشبكة','العنوان','المراجعة'].map(function(label,i){return h('span',{key:label,className:i<step?'active':'','aria-current':i===step-1?'step':undefined},label)})):null,content,error?h('div',{className:'kw-error',role:'alert'},error):null,footer));
+  return h('div',{className:'kw-overlay'+(showHistory?' kw-history-mode':'')+(historyDetail?' kw-detail-mode':'' )},h('section',{id:'kw-dialog',className:'kw-flow',role:'dialog','aria-modal':true,'aria-labelledby':'kw-title',tabIndex:-1,lang:'ar'},h('header',{className:'kw-header'},h(Button,{className:'kw-icon','aria-label':'رجوع',onClick:back},h(Icon,{name:'back'})),h('h1',{id:'kw-title'},showHistory?(historyDetail?'تفاصيل السحب':'سجل السحب'):choose?'حساب السحب':step===3?'المعلومات الإضافية':step===4?'مراجعة السحب':step===5?'طلب السحب':'السحب'),showHistory?null:h(Button,{className:'kw-icon kw-history-open','aria-label':'فتح سجل السحب',title:'سجل السحب',onClick:openHistory},h(Icon,{name:'history'}))),step<5&&!choose&&!showHistory?h('nav',{className:'kw-progress','aria-label':'مراحل السحب'},['المبلغ','الشبكة','العنوان','المراجعة'].map(function(label,i){return h('span',{key:label,className:i<step?'active':'','aria-current':i===step-1?'step':undefined},label)})):null,content,error&&step!==5?h('div',{className:'kw-error',role:'alert'},error):null,footer));
  }
  function enable(){document.querySelectorAll('.wallet-actions button').forEach(function(b){if(['سحب','السحب','Withdraw'].includes(b.textContent.trim())&&b.disabled)b.disabled=false})}
  document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.wallet-actions button');if(b&&['سحب','السحب','Withdraw'].includes(b.textContent.trim())){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();open()}},true);
@@ -6861,7 +6865,7 @@ function kycSheet(){
 function rowEl(id){try{return document.querySelector('#ksp [data-a="'+id+'"]')}catch(e){return null}}
 function setSub(row,txt){if(!row)return;var t=row.querySelector('.tx .mut');if(!t){var tx=row.querySelector('.tx');if(!tx)return;t=document.createElement('span');t.className='mut';tx.appendChild(t)}if(t.textContent!==txt)t.textContent=txt}
 function setSw(row,on){if(!row)return;var s=row.querySelector('.sw');if(s&&s.classList.contains('on')!==!!on)s.classList.toggle('on',!!on)}
-function kycLabel(){var remote=String(prof().verificationStatus||'').trim().toLowerCase();if(remote==='verified'||remote==='موثق'||remote==='موثّق')return 'موثّق بالكامل';if(remote==='pending'||remote==='قيد المراجعة')return 'قيد المعالجة · يتم التحقق الآن';if(remote==='rejected'||remote==='مرفوض')return 'مرفوض · راجع حالة طلبك';var k=kycState(),l=Number(k.level)||0;if(k.status==='pending')return 'قيد المعالجة · يتم التحقق الآن';if(l>=3)return 'موثّق بالكامل · المستوى 3';if(l>0)return 'موثّق · المستوى '+l;return 'لم يتم التحقق منه · أكمل الخطوات'}
+function kycLabel(){var remote=String(prof().verificationStatus||'').trim().toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/\s+/g,' ');if(['verified','approved','approve','accepted','مقبول','موثق','تم','تم التحقق','تم التوثيق','موافقة','موافق','معتمد','موثق بالكامل'].indexOf(remote)>=0)return 'موثّق بالكامل';if(['pending','review','under review','قيد المراجعة','قيد المعالجة','قيد الانتظار','معلق'].indexOf(remote)>=0)return 'قيد المعالجة · يتم التحقق الآن';if(['rejected','مرفوض','رفض'].indexOf(remote)>=0)return 'مرفوض · راجع حالة طلبك';var k=kycState(),l=Number(k.level)||0;if(k.status==='pending')return 'قيد المعالجة · يتم التحقق الآن';if(l>=3)return 'موثّق بالكامل · المستوى 3';if(l>0)return 'موثّق · المستوى '+l;return 'لم يتم التحقق منه · أكمل الخطوات'}
 function inviteLabel(){var c=inviteState().code||prof().inviteCode||'';return c||'لم يتم توفيره'}
 function antiLabel(){var c=antiState().code||'';return c?('مفعّل · '+c.replace(/./g,'•')):'لم يتم التعيين'}
 function syncRows(){
@@ -7843,6 +7847,42 @@ setTimeout(function(){if(!primed)armPool(false)},800);
 }
 .kw-overlay:not(.kw-history-mode) .kw-edit{
   color:#bd00e7;
+}
+.kw-overlay:not(.kw-history-mode) .kw-result{
+  display:grid;
+  place-items:center;
+  min-height:260px;
+  text-align:center;
+}
+.kw-overlay:not(.kw-history-mode) .kw-status-card{
+  width:min(100%,360px);
+  padding:24px 18px;
+  border:1px solid var(--kw-border);
+  border-radius:20px;
+  background:var(--kw-brand-soft);
+}
+.kw-overlay:not(.kw-history-mode) .kw-status-icon{
+  display:grid;
+  place-items:center;
+  width:48px;
+  height:48px;
+  margin:0 auto 14px;
+  border-radius:50%;
+  background:rgba(62,214,164,.14);
+  color:#42d6a4;
+  font-size:25px;
+  font-weight:800;
+}
+.kw-overlay:not(.kw-history-mode) .kw-status-card strong{
+  display:block;
+  color:#42d6a4;
+  font-size:18px;
+}
+.kw-overlay:not(.kw-history-mode) .kw-status-card p{
+  margin:9px 0 0;
+  color:var(--kw-muted);
+  font-size:13px;
+  line-height:1.8;
 }
 </style>
 
@@ -8904,10 +8944,6 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
       const button = event.target && event.target.closest && event.target.closest('button');
       if (!button) return;
 
-      if (window.__veloxAllowKycNext && button.matches('.ksv-primary[data-next]')) {
-        window.__veloxAllowKycNext = false;
-        return;
-      }
       if (button.matches('.ksv-doctypes [data-doctype]') || button.hasAttribute('data-doctype')) {
         kycValues.docType = button.getAttribute('data-doctype') || '';
         return;
@@ -9036,7 +9072,6 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
             storeBalances({ balance: newBalance });
             storeProfile({ balance: newBalance });
           }
-          showToast('تم تسجيل طلب السحب وحجز المبلغ مباشرة.', 'withdrawal');
           window.dispatchEvent(new Event('ks-pull-refresh'));
           refreshServerBalance();
         }, '...');
@@ -9100,8 +9135,9 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
           try { sessionStorage.removeItem(referenceKey); } catch (ignore) {}
           window.__veloxKycFiles = {};
           button.disabled = false;
-          window.__veloxAllowKycNext = true;
-          button.click();
+          const kycModal = button.closest('#ksp-m');
+          const closeControl = kycModal && kycModal.querySelector('[data-x]');
+          if (closeControl) closeControl.click();
         }, '...');
         return;
       }
