@@ -5235,7 +5235,7 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
   function historyText(item,keys,fallback){for(var i=0;i<keys.length;i++){var value=item&&item[keys[i]];if(value!==undefined&&value!==null&&String(value)!=='')return String(value)}return fallback||''}
   function masked(value){value=String(value||'');return value.length>18?value.slice(0,7)+'...'+value.slice(-7):value}
   function historyRow(item,index){
-     var amount=formatHistoryAmount(item),state=historyStatus(item.statusCode||item.status||item.state),date=historyDateValue(item),network=historyText(item,['networkLabel','networkName','network','chain','networkCode'],'غير متاح'),address=historyText(item,['address','toAddress','destinationAddress','withdrawalAddress','walletAddress','recipientAddress'],'');
+      var amount=formatHistoryAmount(item),state=historyStatus(item.statusCode||item.status||item.state),date=historyDateValue(item),network=historyText(item,['networkLabel','networkName','network','chain','networkCode'],'غير متاح'),address=historyText(item,['address','toAddress','destinationAddress','withdrawalAddress','walletAddress','recipientAddress','wallet'],'');
     return h('button',{type:'button',key:historyReference(item)+'-'+index,className:'dhs-row',dir:'ltr','aria-label':'تفاصيل السحب '+amount.display,onClick:function(){setHistoryDetail(item)}},
       h('span',{className:'dhs-row-top'},
         h('span',{className:'dhs-chev'},h('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2','stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':true},h('path',{d:'m15 18-6-6 6-6'}))),
@@ -5255,7 +5255,7 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
     return h('div',{className:'dhs-card-row'},h('span',{className:'dhs-card-label'},label),h('span',{className:'dhs-card-val'+(mono?' is-mono':'')+(valueClass?' '+valueClass:''),dir:mono?'ltr':'auto'},value||'غير متاح'),copyText?h('button',{type:'button',className:'dhs-copy','aria-label':'نسخ '+label,onClick:function(){copyValue(copyText)}},copyIcon()):null);
   }
   function renderWithdrawalDetails(item){
-     var amount=formatHistoryAmount(item),state=historyStatus(item.statusCode||item.status||item.state),date=historyDateValue(item),reference=historyReference(item),network=historyText(item,['networkLabel','networkName','network','chain','networkCode'],'غير متاح'),address=historyText(item,['address','toAddress','destinationAddress','withdrawalAddress','walletAddress','recipientAddress'],'');
+     var amount=formatHistoryAmount(item),state=historyStatus(item.statusCode||item.status||item.state),date=historyDateValue(item),reference=historyReference(item),network=historyText(item,['networkLabel','networkName','network','chain','networkCode'],'غير متاح'),address=historyText(item,['address','toAddress','destinationAddress','withdrawalAddress','walletAddress','recipientAddress','wallet'],'');
     var fee=historyText(item,['networkFee','fee','withdrawalFee','transactionFee'],'');
     return h('main',{className:'dep-history-content dep-detail-view'},h('div',{className:'dhs-screen',dir:'rtl'},
       h('section',{className:'dhs-hero'},h('span',{className:'dep-coin-logo'+(amount.asset==='USDC'?' usdc':'') ,'aria-hidden':true},amount.asset==='USDC'?'$':amount.asset==='BTC'?'₿':amount.asset==='ETH'?'◆':'₮'),h('div',{className:'dhs-hero-amount',dir:'ltr'},amount.display),h('span',{className:'dhs-hero-label'},'مبلغ السحب')),
