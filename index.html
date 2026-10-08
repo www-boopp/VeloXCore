@@ -6728,7 +6728,8 @@ function kycSheet(){
   if(!document.getElementById(themeStyleId)){
     var theme=document.createElement('style');theme.id=themeStyleId;
     theme.textContent='#ksp-m{background:rgba(0,0,0,.84)!important;backdrop-filter:blur(10px)}#ksp-m .ksv-shell{border-color:rgba(211,169,255,.2)!important;background:radial-gradient(ellipse 78% 42% at 100% 0%,rgba(189,35,255,.2),transparent 66%),radial-gradient(ellipse 70% 34% at 0% 100%,rgba(30,210,137,.06),transparent 68%),linear-gradient(160deg,#191523,#10151b 74%,#14131e)!important;color:#f3f0f5!important;box-shadow:0 18px 70px rgba(0,0,0,.66),0 0 28px rgba(189,35,255,.13)!important}#ksp-m .ksv-flow{color:#f3f0f5!important}#ksp-m .ksv-head{background:transparent}#ksp-m .ksv-iconbtn{border-color:rgba(255,255,255,.16)!important;background:#08070b!important;color:#f3f0f5!important;transition:border-color .18s,background .18s,box-shadow .18s}#ksp-m .ksv-iconbtn:hover,#ksp-m .ksv-iconbtn:focus-visible{border-color:#bd00e7!important;background:#130919!important;box-shadow:0 0 12px rgba(217,46,241,.22);outline:none}#ksp-m .ksv-step{color:#d5cedb!important}#ksp-m .ksv-stepnum{border-color:#d92ef1!important;color:#fff!important;box-shadow:0 0 10px rgba(217,46,241,.16)}#ksp-m .ksv-panel{border-color:rgba(211,169,255,.2)!important;background:linear-gradient(160deg,rgba(25,21,35,.98),rgba(16,21,27,.99) 74%,rgba(20,19,30,.98))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}#ksp-m .ksv-scroll{scrollbar-color:rgba(217,46,241,.45) transparent}#ksp-m .ksv-title{color:#fff!important;text-shadow:0 0 1px #fff,0 0 6px rgba(255,255,255,.25),0 0 16px rgba(196,38,232,.28)}#ksp-m .ksv-subtitle{color:#d2cdd7!important}#ksp-m .ksv-label{color:#ded9e1!important}#ksp-m .ksv-label em,#ksp-m .ksv-required em{color:#e66bef!important}#ksp-m .ksv-input{border-color:rgba(255,255,255,.14)!important;background:#09090d!important;color:#f3f0f5!important}#ksp-m .ksv-input:focus{border-color:#bd00e7!important;background:#0d0810!important;box-shadow:0 0 0 3px rgba(217,46,241,.14),0 0 16px rgba(217,46,241,.12)!important}#ksp-m .ksv-input::placeholder{color:#77737d!important}#ksp-m .ksv-country:after{color:#d6cedb!important}#ksp-m .ksv-country select option{background:#15111b;color:#f3f0f5}#ksp-m .ksv-radio-list{border:1px solid rgba(255,255,255,.1);background:#09090d!important}#ksp-m .ksv-choice{border-color:rgba(255,255,255,.09)!important;background:#09090d!important;color:#e7e2eb!important}#ksp-m .ksv-choice input{accent-color:#d92ef1}#ksp-m .ksv-why{color:#db4bf2!important}#ksp-m .ksv-why:hover{text-shadow:0 0 10px rgba(217,46,241,.5)}#ksp-m .ksv-whybox,#ksp-m .ksv-tip{border:1px solid rgba(217,46,241,.18);background:rgba(151,18,171,.08)!important;color:#c9c1ce!important}#ksp-m .ksv-doctype{border-color:rgba(255,255,255,.09)!important;background:#09090d!important;color:#e7e2eb!important;transition:border-color .18s,background .18s,box-shadow .18s}#ksp-m .ksv-doctype:hover{border-color:rgba(217,46,241,.42)!important;background:#100b14!important}#ksp-m .ksv-doctype.selected{border-color:#d92ef1!important;background:rgba(151,18,171,.13)!important;box-shadow:inset 0 0 15px rgba(217,46,241,.08),0 0 11px rgba(217,46,241,.1)}#ksp-m .ksv-radio{border-color:rgba(255,255,255,.38)!important;background:#111018!important}#ksp-m .ksv-doctype.selected .ksv-radio{border-color:#d92ef1!important}#ksp-m .ksv-doctype.selected .ksv-radio:after{background:#d92ef1!important;box-shadow:0 0 9px rgba(217,46,241,.8)}#ksp-m .ksv-docsummary{border:1px solid rgba(255,255,255,.1);background:#09090d!important;color:#eee8f2!important}#ksp-m .ksv-edit{color:#d9cfe0!important}#ksp-m .ksv-upload{border-color:rgba(217,46,241,.38)!important;background:rgba(9,9,13,.9)!important;transition:border-color .18s,background .18s,box-shadow .18s}#ksp-m .ksv-upload:hover,#ksp-m .ksv-upload:focus-within{border-color:#d92ef1!important;background:#100b14!important;box-shadow:0 0 14px rgba(217,46,241,.12)}#ksp-m .ksv-upload-text b{color:#f3f0f5!important}#ksp-m .ksv-upload-text em{color:#db4bf2!important}#ksp-m .ksv-upload-icon{background:rgba(151,18,171,.14)!important;color:#d8c9df!important}#ksp-m .ksv-upload.has-file{border-color:#72d6ab!important;background:rgba(33,91,67,.13)!important}#ksp-m .ksv-upload.has-file .ksv-upload-icon{background:rgba(33,161,104,.17)!important;color:#72d6ab!important}#ksp-m .ksv-filehint,#ksp-m .ksv-required{color:#aaa3ad!important}#ksp-m .ksv-action{border-top:1px solid rgba(255,255,255,.07);background:linear-gradient(180deg,rgba(17,14,23,.92),#101016)!important}#ksp-m .ksv-primary{border:1px solid #bd00e7!important;background:linear-gradient(180deg,rgba(80,0,91,.88),rgba(28,0,31,.94))!important;box-shadow:inset 0 0 16px rgba(222,0,255,.24),0 0 11px rgba(220,0,255,.3)!important;color:#f8f4fa!important;transition:transform .18s,filter .18s,box-shadow .18s}#ksp-m .ksv-primary:not(:disabled):hover{filter:brightness(1.17);box-shadow:inset 0 0 19px rgba(231,0,255,.34),0 0 17px rgba(220,0,255,.46)!important}#ksp-m .ksv-primary:not(:disabled):active{transform:scale(.985)}#ksp-m .ksv-primary:disabled{border-color:rgba(255,255,255,.08)!important;background:#34303a!important;box-shadow:none!important;color:#89828e!important}#ksp-m .ksv-footer{color:#918b9d!important}#ksp-m .ksv-brand{color:#ded5e5!important}#ksp-m .ksv-complete-sub{margin:10px 0;color:#aaa7af;font-size:13px;line-height:1.7}#ksp-m .ksv-checkmark{border:1px solid rgba(217,46,241,.45);background:rgba(151,18,171,.16)!important;color:#f4b3fc!important;box-shadow:0 0 19px rgba(217,46,241,.18)}#ksp-m .ksv-menu{border-color:rgba(217,46,241,.25)!important;background:#111018!important;box-shadow:0 8px 26px #0008!important}#ksp-m .ksv-menu button{background:transparent!important;color:#eee8f2!important}#ksp-m .ksv-menu button:hover{background:rgba(217,46,241,.1)!important}';
-    theme.textContent+='#ksp-m .ksv-iconbtn svg{display:block;width:20px;height:20px}#ksp-m .ksv-upload-icon svg{display:block;width:26px;height:26px}';
+    theme.textContent+='#ksp-m .ksv-iconbtn svg{display:block;width:20px;height:20px}#ksp-m .ksv-upload-icon svg{display:block;width:26px;height:26px}'+
+      '#ksp-m .ksv-upload[data-upload]{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:12px!important;min-height:0!important;cursor:default}#ksp-m .ksv-upload-heading{display:flex;align-items:center;gap:10px;width:100%}#ksp-m .ksv-upload-heading .ksv-upload-text{flex:1;min-width:0}#ksp-m .ksv-upload-heading .ksv-upload-icon{width:48px;height:48px;border-radius:14px}#ksp-m .ksv-upload-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}#ksp-m .ksv-upload-action{position:relative;display:flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:8px 7px;border:1px solid rgba(211,169,255,.22);border-radius:11px;background:rgba(255,255,255,.035);color:#ece7f0;font-size:11px;font-weight:700;cursor:pointer;transition:border-color .18s,background .18s}#ksp-m .ksv-upload-action:hover,#ksp-m .ksv-upload-action:focus-within{border-color:#d92ef1;background:rgba(151,18,171,.12)}#ksp-m .ksv-upload-action svg{width:16px;height:16px;flex:none}#ksp-m .ksv-upload-action input{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;opacity:0!important;cursor:pointer!important;padding:0!important;z-index:2!important}#ksp-m .ksv-pending-card{display:grid;gap:5px;margin:14px 0;padding:14px;border:1px solid rgba(217,46,241,.25);border-radius:13px;background:rgba(151,18,171,.08);text-align:right}#ksp-m .ksv-pending-card span{font-size:11px;color:#aaa3ad}#ksp-m .ksv-pending-card strong{font-size:14px;color:#f0ceff}#ksp-m .ksv-pending-card p{margin:0;font-size:12px;line-height:1.75;color:#c9c1ce}';
     document.head.appendChild(theme);
   }
   var flowModal=null;
@@ -6767,8 +6768,14 @@ function kycSheet(){
   function validPersonal(){return state.first.trim().length>0&&state.last.trim().length>0&&!!state.nationality&&validBirth()}
   function validPage(){if(state.page===0)return !!state.residence;if(state.page===1)return validPersonal();if(state.page===2)return !!state.docType&&!!state.issueCountry;if(state.page===3)return filesReady();return true}
   function titleAndDescription(title,desc){return '<h2 class="ksv-title">'+title+'</h2><p class="ksv-subtitle">'+desc+'</p>'}
-  function uploadCard(key,title){var f=state.files[key];return '<label class="ksv-upload'+(f?' has-file':'')+'"><input type="file" data-file="'+key+'" accept=".jpg,.jpeg,.png,.webp,.heic,image/jpeg,image/png,image/webp,image/heic">'+
-    '<span class="ksv-upload-text"><b>'+title+' <em>*</em></b><em>'+(f?esc(f.name):'اختر من جهازك')+'</em></span><span class="ksv-upload-icon">'+(f?'✓':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5"></path><path d="M20 16.5v1A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-1"></path></svg>')+'</span></label>'}
+  function uploadCard(key,title){
+    var f=state.files[key],accept='.jpg,.jpeg,.png,.webp,.heic,image/jpeg,image/png,image/webp,image/heic';
+    var uploadIcon=f?'✓':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5"></path><path d="M20 16.5v1A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-1"></path></svg>';
+    return '<div class="ksv-upload'+(f?' has-file':'')+'" data-upload="'+key+'"><div class="ksv-upload-heading">'+
+      '<span class="ksv-upload-text"><b>'+title+' <em>*</em></b><em>'+(f?esc(f.name):'اختر طريقة إضافة الصورة')+'</em></span><span class="ksv-upload-icon">'+uploadIcon+'</span></div>'+
+      '<div class="ksv-upload-actions"><label class="ksv-upload-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"></path><circle cx="12" cy="13" r="3.2"></circle></svg><span>التصوير بالكاميرا</span><input type="file" data-file="'+key+'" accept="'+accept+'" capture="environment" aria-label="التقاط صورة '+title+'"></label>'+
+      '<label class="ksv-upload-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5"></path><path d="M20 16.5v1A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-1"></path></svg><span>رفع من الجهاز</span><input type="file" data-file="'+key+'" accept="'+accept+'" aria-label="رفع صورة '+title+' من الجهاز"></label></div></div>'
+  }
   function render(){
     var head='<div class="ksv-head"><button type="button" class="ksv-iconbtn" data-x aria-label="إغلاق">×</button><button type="button" class="ksv-iconbtn" data-help aria-label="المساعدة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13a9 9 0 0 1 18 0"></path><path d="M3 13v4a2 2 0 0 0 2 2h2v-7H5a2 2 0 0 0-2 2zm18 0v4a2 2 0 0 1-2 2h-2v-7h2a2 2 0 0 1 2 2z"></path><path d="M17 19h-2"></path></svg></button><span class="ksv-head-spacer"></span><button type="button" class="ksv-iconbtn" data-lang aria-label="اللغة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"></path></svg></button>'+
       (pageName()?'<div class="ksv-step"><span class="ksv-stepnum">'+pageName()+'</span><span>الخطوة</span></div>':'')+
@@ -6800,7 +6807,8 @@ function kycSheet(){
         uploadCard('front','الوجه الأمامي')+(state.docType==='passport'?'':uploadCard('back','الوجه الخلفي'))+
         '<p class="ksv-filehint">JPG، PNG، WEBP أو HEIC (الحد الأقصى 4 MB للصورة)<br>لا ترفع صورًا غير واضحة أو مقصوصة.</p>';
     }else{
-      body='<div class="ksv-complete"><div class="ksv-checkmark">✓</div>'+titleAndDescription('اكتملت خطوات التحقق','تم إدخال البيانات وإرفاق صور المستندات المطلوبة.')+
+      body='<div class="ksv-complete"><div class="ksv-checkmark">✓</div>'+titleAndDescription('تم استلام طلب التحقق','تم حفظ بياناتك ومستنداتك وإرسال الطلب للمراجعة.')+
+        '<div class="ksv-pending-card"><span>حالة الطلب</span><strong>قيد المعالجة الآن</strong><p>تتم مراجعة بياناتك ومستنداتك. ستظهر حالة «موثّق» في ملفك الشخصي بعد الموافقة.</p></div>'+
         '<p class="ksv-complete-sub">يمكنك العودة إلى حسابك الآن.</p></div>';
     }
     var primary=state.page===3?(filesReady()?'متابعة':state.files.front?'تحميل الوجه الخلفي':'تحميل الوجه الأمامي'):state.page===4?'العودة إلى الحساب':'متابعة';
@@ -6853,7 +6861,7 @@ function kycSheet(){
 function rowEl(id){try{return document.querySelector('#ksp [data-a="'+id+'"]')}catch(e){return null}}
 function setSub(row,txt){if(!row)return;var t=row.querySelector('.tx .mut');if(!t){var tx=row.querySelector('.tx');if(!tx)return;t=document.createElement('span');t.className='mut';tx.appendChild(t)}if(t.textContent!==txt)t.textContent=txt}
 function setSw(row,on){if(!row)return;var s=row.querySelector('.sw');if(s&&s.classList.contains('on')!==!!on)s.classList.toggle('on',!!on)}
-function kycLabel(){var k=kycState(),l=Number(k.level)||0;if(k.status==='pending')return 'قيد المراجعة · المستوى '+(l+1);if(l>=3)return 'موثّق بالكامل · المستوى 3';if(l>0)return 'موثّق · المستوى '+l;return 'لم يتم التحقق منه · أكمل الخطوات'}
+function kycLabel(){var remote=String(prof().verificationStatus||'').trim().toLowerCase();if(remote==='verified'||remote==='موثق'||remote==='موثّق')return 'موثّق بالكامل';if(remote==='pending'||remote==='قيد المراجعة')return 'قيد المعالجة · يتم التحقق الآن';if(remote==='rejected'||remote==='مرفوض')return 'مرفوض · راجع حالة طلبك';var k=kycState(),l=Number(k.level)||0;if(k.status==='pending')return 'قيد المعالجة · يتم التحقق الآن';if(l>=3)return 'موثّق بالكامل · المستوى 3';if(l>0)return 'موثّق · المستوى '+l;return 'لم يتم التحقق منه · أكمل الخطوات'}
 function inviteLabel(){var c=inviteState().code||prof().inviteCode||'';return c||'لم يتم توفيره'}
 function antiLabel(){var c=antiState().code||'';return c?('مفعّل · '+c.replace(/./g,'•')):'لم يتم التعيين'}
 function syncRows(){
@@ -6878,6 +6886,7 @@ function syncRows(){
 }
 var syncT=null;
 function queueSync(){if(syncT)clearTimeout(syncT);syncT=setTimeout(syncRows,90)}
+window.addEventListener('ks-profile-data-updated',queueSync);
 var HANDLERS={invite:inviteSheet,kyc:kycSheet,tw:twoFaManage,bio:bioManage,pwd:pwdSheet,anti:antiManage,ses:sesManage,push:pushManage};
 window.addEventListener('click',function(e){
   var t=e.target;
@@ -8325,7 +8334,7 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
 
   function showToast(text, kind) {
     let node;
-    if (kind === 'deposit') {
+    if (kind === 'deposit' || kind === 'withdrawal') {
       node = document.querySelector('.dep-toast');
       if (!node) {
         node = document.createElement('div');
@@ -8446,6 +8455,7 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
       referralLink: merged.referralLink
     });
     try { localStorage.setItem('ks_profile_v1', JSON.stringify(p)); } catch (ignore) {}
+    window.dispatchEvent(new Event('ks-profile-data-updated'));
   }
 
   function storeBalances(result) {
@@ -9026,7 +9036,7 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
             storeBalances({ balance: newBalance });
             storeProfile({ balance: newBalance });
           }
-          showToast('تم تسجيل طلب السحب وحجز المبلغ مباشرة.');
+          showToast('تم تسجيل طلب السحب وحجز المبلغ مباشرة.', 'withdrawal');
           window.dispatchEvent(new Event('ks-pull-refresh'));
           refreshServerBalance();
         }, '...');
@@ -9079,10 +9089,14 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
             docType: docType,
             docFiles: docFiles
           });
-          if (!accepted(result)) {
+          if (!result || !(result.ok === true || result.success === true) || result.error) {
             showToast(apiErrorMessage(result));
             return;
           }
+          const verificationData = dataOf(result);
+          storeProfile(Object.assign({}, result, {
+            verificationStatus: safeText(verificationData.verificationStatus || 'Pending')
+          }));
           try { sessionStorage.removeItem(referenceKey); } catch (ignore) {}
           window.__veloxKycFiles = {};
           button.disabled = false;
