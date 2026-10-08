@@ -1402,8 +1402,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
      A connected backend owns "status": completed | processing | rejected. */
   function depositStatus(value){
     var status=String(value||"").trim().toLowerCase();
-    if(["completed","confirmed","success","succeeded","complete","done"].indexOf(status)>-1)return {key:"completed",label:"مكتمل",className:"is-complete"};
-    if(["failed","rejected","cancelled","canceled","error","declined"].indexOf(status)>-1)return {key:"rejected",label:"فشل",className:"is-failed"};
+    if(["completed","confirmed","success","succeeded","complete","done","approved","approve","accepted","paid","مكتمل","مكتملة","معتمد","مقبول","مدفوع","تم","مفعل"].indexOf(status)>-1)return {key:"completed",label:"مكتمل",className:"is-complete"};
+    if(["failed","rejected","cancelled","canceled","error","declined","مرفوض","ملغي","ملغى"].indexOf(status)>-1)return {key:"rejected",label:"فشل",className:"is-failed"};
     return {key:"processing",label:"قيد المعالجة",className:"is-pending"};
   }
   function maskValue(value,head,tail){
@@ -1441,7 +1441,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       networkCode:net.code,
       networkLabel:net.label||"غير متاح",
       confirmations:String(pick(item,["confirmations","confirmationsCount","requiredConfirmations"])||net.confirmations||"قيد التأكيد"),
-      status:depositStatus(pick(item,["status","state"])),
+       status:depositStatus(pick(item,["statusCode","status","state"])),
       date:formatHistoryDate(dateValue),
       stamp:historyStamp(dateValue),
       iso:String(dateValue||""),
@@ -1484,7 +1484,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           return dateB-dateA;
         });
          if(window.__veloxHistorySnapshots)window.__veloxHistorySnapshots[window.KS_CRYPTO_DEPOSIT_HISTORY_ENDPOINT||""]={items:sorted};
-        if(sorted.some(function(item){return /^(completed|confirmed|success|succeeded|complete|done)$/i.test(String(item.status||item.state||''))})&&typeof window.KS_SYNC_WALLET_FROM_SERVER==='function')window.KS_SYNC_WALLET_FROM_SERVER();
+         if(sorted.some(function(item){return depositStatus(item.statusCode||item.status||item.state).key==='completed'})&&typeof window.KS_SYNC_WALLET_FROM_SERVER==='function')window.KS_SYNC_WALLET_FROM_SERVER();
         setHistoryState({status:sorted.length?"ready":"empty",items:sorted});
        }).catch(function(){if(active)setHistoryState(function(current){return current.items&&current.items.length?{status:"ready",items:current.items}:{status:"error",items:[]}})});
       return function(){active=false}
@@ -5175,12 +5175,12 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
         var items=Array.isArray(data)?data:data&&Array.isArray(data.transactions)?data.transactions:data&&Array.isArray(data.items)?data.items:null;
         if(!items)throw Error();
         if(typeof window.KS_SYNC_WALLET_FROM_SERVER==='function')window.KS_SYNC_WALLET_FROM_SERVER();
-        var statuses=['approved','completed','confirmed','success','succeeded','complete','pending','pending_review','processing','review','under_review','in_review','rejected','declined','failed','cancelled','canceled','error'];
+         var statuses=['approved','completed','confirmed','success','succeeded','complete','pending','pending_review','processing','review','under_review','in_review','rejected','declined','failed','cancelled','canceled','error','معتمد','مقبول','مكتمل','مكتملة','تم','قيد المعالجة','قيد المراجعة','قيد الانتظار','معلق','معلّق','مرفوض','ملغي','ملغى'];
         items=items.filter(function(item){
           if(!item||item.demo||item.isDemo||item.isMock||item.testOnly)return false;
           var type=String(item.type||item.kind||item.category||'').toLowerCase();
           if(type&&['withdrawal','withdraw','withdrawal_request','crypto_withdrawal'].indexOf(type)<0)return false;
-          var status=String(item.status||item.state||'').toLowerCase(),dateValue=historyDateValue(item),date=dateValue?new Date(dateValue):null;
+           var status=String(item.statusCode||item.status||item.state||'').toLowerCase(),dateValue=historyDateValue(item),date=dateValue?new Date(dateValue):null;
           return statuses.indexOf(status)>=0&&Number(String(item.amount||item.value||'').replace(/,/g,''))>0&&historyReference(item)&&date&&Number.isFinite(date.getTime());
         }).sort(function(a,b){return new Date(historyDateValue(b))-new Date(historyDateValue(a))});
          if(window.__veloxHistorySnapshots)window.__veloxHistorySnapshots[endpoint]={items:items};
@@ -5188,10 +5188,10 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
        }).catch(function(){setHistoryState(function(current){return current==='ready'||current==='empty'?current:'error'})});
   }
   function historyStatus(value){
-    var status=String(value||'').toLowerCase();
-    if(['approved','completed','confirmed','success','succeeded','complete'].indexOf(status)>=0)return {label:'مكتمل',className:'is-complete'};
-    if(['pending','pending_review','processing','review','under_review','in_review'].indexOf(status)>=0)return {label:'قيد المراجعة',className:'is-pending'};
-    if(['rejected','declined','failed','cancelled','canceled','error'].indexOf(status)>=0)return {label:'مرفوض',className:'is-failed'};
+     var status=String(value||'').trim().toLowerCase();
+     if(['approved','completed','confirmed','success','succeeded','complete','accepted','معتمد','مقبول','مكتمل','مكتملة','مدفوع','تم'].indexOf(status)>=0)return {label:'مكتمل',className:'is-complete'};
+     if(['pending','pending_review','processing','review','under_review','in_review','قيد المعالجة','قيد المراجعة','قيد الانتظار','معلق','معلّق'].indexOf(status)>=0)return {label:'قيد المراجعة',className:'is-pending'};
+     if(['rejected','declined','failed','cancelled','canceled','error','مرفوض','ملغي','ملغى'].indexOf(status)>=0)return {label:'مرفوض',className:'is-failed'};
     return {label:'غير معروف',className:''};
   }
   function historyStamp(value){
@@ -5207,7 +5207,7 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
   function historyText(item,keys,fallback){for(var i=0;i<keys.length;i++){var value=item&&item[keys[i]];if(value!==undefined&&value!==null&&String(value)!=='')return String(value)}return fallback||''}
   function masked(value){value=String(value||'');return value.length>18?value.slice(0,7)+'...'+value.slice(-7):value}
   function historyRow(item,index){
-    var amount=formatHistoryAmount(item),state=historyStatus(item.status||item.state),date=historyDateValue(item),network=historyText(item,['networkLabel','networkName','network','chain','networkCode'],'غير متاح'),address=historyText(item,['address','toAddress','destinationAddress','withdrawalAddress','walletAddress','recipientAddress'],'');
+     var amount=formatHistoryAmount(item),state=historyStatus(item.statusCode||item.status||item.state),date=historyDateValue(item),network=historyText(item,['networkLabel','networkName','network','chain','networkCode'],'غير متاح'),address=historyText(item,['address','toAddress','destinationAddress','withdrawalAddress','walletAddress','recipientAddress'],'');
     return h('button',{type:'button',key:historyReference(item)+'-'+index,className:'dhs-row',dir:'ltr','aria-label':'تفاصيل السحب '+amount.display,onClick:function(){setHistoryDetail(item)}},
       h('span',{className:'dhs-row-top'},
         h('span',{className:'dhs-chev'},h('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2','stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':true},h('path',{d:'m15 18-6-6 6-6'}))),
@@ -5227,7 +5227,7 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
     return h('div',{className:'dhs-card-row'},h('span',{className:'dhs-card-label'},label),h('span',{className:'dhs-card-val'+(mono?' is-mono':'')+(valueClass?' '+valueClass:''),dir:mono?'ltr':'auto'},value||'غير متاح'),copyText?h('button',{type:'button',className:'dhs-copy','aria-label':'نسخ '+label,onClick:function(){copyValue(copyText)}},copyIcon()):null);
   }
   function renderWithdrawalDetails(item){
-    var amount=formatHistoryAmount(item),state=historyStatus(item.status||item.state),date=historyDateValue(item),reference=historyReference(item),network=historyText(item,['networkLabel','networkName','network','chain','networkCode'],'غير متاح'),address=historyText(item,['address','toAddress','destinationAddress','withdrawalAddress','walletAddress','recipientAddress'],'');
+     var amount=formatHistoryAmount(item),state=historyStatus(item.statusCode||item.status||item.state),date=historyDateValue(item),reference=historyReference(item),network=historyText(item,['networkLabel','networkName','network','chain','networkCode'],'غير متاح'),address=historyText(item,['address','toAddress','destinationAddress','withdrawalAddress','walletAddress','recipientAddress'],'');
     var fee=historyText(item,['networkFee','fee','withdrawalFee','transactionFee'],'');
     return h('main',{className:'dep-history-content dep-detail-view'},h('div',{className:'dhs-screen',dir:'rtl'},
       h('section',{className:'dhs-hero'},h('span',{className:'dep-coin-logo'+(amount.asset==='USDC'?' usdc':'') ,'aria-hidden':true},amount.asset==='USDC'?'$':amount.asset==='BTC'?'₿':amount.asset==='ETH'?'◆':'₮'),h('div',{className:'dhs-hero-amount',dir:'ltr'},amount.display),h('span',{className:'dhs-hero-label'},'مبلغ السحب')),
@@ -5265,6 +5265,9 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
       var result={};try{result=await response.json()}catch(ignore){}
       if(!result||!(result.ok===true||result.success===true)||result.error)throw Error('withdrawal not acknowledged');
       setError('تم إرسال طلب السحب للمراجعة وحجز المبلغ في رصيد الحساب.');
+       if(typeof window.KS_SYNC_WALLET_FROM_SERVER==='function'){
+         try{await window.KS_SYNC_WALLET_FROM_SERVER()}catch(ignore){}
+       }
       setTimeout(close,1100);
     }catch(error){setError('تعذر إرسال طلب السحب؛ لم يُخصم أي رصيد. حاول مجددًا.')}
     finally{submitLock.current=false}
@@ -8540,39 +8543,12 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
     const flow = modal && modal.querySelector('.ksv-flow');
     const scroll = flow && flow.querySelector('.ksv-scroll');
     if (!scroll || !scroll.querySelector('.ksv-upload')) return;
-    if (!scroll.querySelector('#docNumber')) {
-      const label = document.createElement('label');
-      label.className = 'ksv-label';
-      label.htmlFor = 'docNumber';
-      label.textContent = 'رقم الوثيقة';
-      const input = document.createElement('input');
-      input.className = 'ksv-input';
-      input.id = 'docNumber';
-      input.type = 'text';
-      input.autocomplete = 'off';
-      input.value = kycValues.docNumber || '';
-      input.placeholder = 'رقم الوثيقة';
-      const fileHint = scroll.querySelector('.ksv-filehint');
-      scroll.insertBefore(label, fileHint || null);
-      scroll.insertBefore(input, fileHint || null);
-    }
-    if (!scroll.querySelector('#docUrl')) {
-      const label = document.createElement('label');
-      label.className = 'ksv-label';
-      label.htmlFor = 'docUrl';
-      label.textContent = 'رابط المستند (اختياري عند رفع الصور)';
-      const input = document.createElement('input');
-      input.className = 'ksv-input';
-      input.id = 'docUrl';
-      input.type = 'url';
-      input.dir = 'ltr';
-      input.autocomplete = 'url';
-      input.value = kycValues.docUrl || '';
-      input.placeholder = 'https://';
-      const fileHint = scroll.querySelector('.ksv-filehint');
-      scroll.insertBefore(label, fileHint || null);
-      scroll.insertBefore(input, fileHint || null);
-    }
+    ['docNumber', 'docUrl'].forEach(function (id) {
+      const input = scroll.querySelector('#' + id);
+      const label = scroll.querySelector('label[for="' + id + '"]');
+      if (input) input.remove();
+      if (label) label.remove();
+    });
   }
 
   function valueOf(id) {
@@ -8827,9 +8803,6 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
         if (pair) target.dataset.autoPair = pair;
         else delete target.dataset.autoPair;
       }
-      if (target.id === 'docNumber' || target.id === 'docUrl') {
-        kycValues[target.id] = target.value;
-      }
       if (['ksv-first', 'ksv-middle', 'ksv-last'].includes(target.id)) {
         kycValues[target.id] = target.value;
       }
@@ -8952,28 +8925,22 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
         return;
       }
 
-      if (button.matches('.ksv-primary[data-next]') && document.getElementById('docNumber')) {
+      if (button.matches('.ksv-primary[data-next]') && button.closest('#ksp-m') && button.closest('#ksp-m').querySelector('.ksv-upload')) {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
-        const docNumber = valueOf('docNumber');
-        const docUrl = valueOf('docUrl');
         const fullName = ['ksv-first', 'ksv-middle', 'ksv-last']
           .map(function (id) { return safeText(kycValues[id]).trim(); })
           .filter(Boolean).join(' ');
         const docType = kycValues.docType || '';
         const selectedFiles = window.__veloxKycFiles || {};
         const requiredFileKeys = String(docType).toLowerCase() === 'passport' ? ['front'] : ['front', 'back'];
-        if (!fullName || !docType || !docNumber) {
+        if (!fullName || !docType) {
           showToast('أكمل بيانات الهوية المطلوبة.');
           return;
         }
-        if (!docUrl && !requiredFileKeys.every(function (key) { return !!selectedFiles[key]; })) {
+        if (!requiredFileKeys.every(function (key) { return !!selectedFiles[key]; })) {
           showToast('أرفق صور الوثيقة المطلوبة قبل المتابعة.');
-          return;
-        }
-        if (docUrl && !/^https?:\/\//i.test(docUrl)) {
-          showToast('أدخل رابط مستند صحيحًا.');
           return;
         }
         withBusy(button, async function () {
@@ -9002,8 +8969,6 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
             email: user.email,
             fullName: fullName,
             docType: docType,
-            docNumber: docNumber,
-            docUrl: docUrl,
             docFiles: docFiles
           });
           if (!accepted(result)) {
