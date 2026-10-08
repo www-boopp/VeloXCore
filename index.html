@@ -6708,24 +6708,36 @@ function inviteSheet(){
 /* ---------- KYC ---------- */
 function kycState(){return ls(KK,{level:0,status:'none',docType:'id',name:'',dob:'',country:'',address:'',files:{},submittedAt:'',reviewedAt:''})}
 var kycStatusCheckInFlight=false;
+function kycNormalizedStatus(value){
+  return String(value||'').trim().toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/\s+/g,' ');
+}
 function kycIsVerified(){
-  var remote=String(prof().verificationStatus||'').trim().toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/\s+/g,' ');
+  var remote=kycNormalizedStatus(prof().verificationStatus);
   return ['verified','approved','approve','accepted','مقبول','موثق','تم','تم التحقق','تم التوثيق','موافقة','موافق','معتمد','موثق بالكامل'].indexOf(remote)>=0;
 }
+function kycIsPending(){
+  var remote=kycNormalizedStatus(prof().verificationStatus);
+  return ['pending','review','under review','قيد المراجعة','قيد المعالجة','قيد الانتظار','معلق'].indexOf(remote)>=0;
+}
+function kycIsRejected(){
+  var remote=kycNormalizedStatus(prof().verificationStatus);
+  return ['rejected','reject','مرفوض','رفض'].indexOf(remote)>=0;
+}
 function kycSheet(statusChecked){
-  if(kycIsVerified()){toast('تم التوثيق');queueSync();return}
-  if(!statusChecked&&!kycStatusCheckInFlight&&typeof window.apiGet==='function'){
+  if(!statusChecked&&typeof window.apiGet==='function'){
+    if(kycStatusCheckInFlight)return;
     kycStatusCheckInFlight=true;
     var current=prof();
     window.apiGet({action:'getProfile',username:current.username||current.name||'',email:current.email||'',uid:current.uid||''}).then(function(result){
       var data=result&&(result.user||result.account||result.profile||result.data||result);
       if(result&&result.ok!==false&&data&&data.verificationStatus)setProf({verificationStatus:data.verificationStatus});
       queueSync();
-      if(kycIsVerified()){toast('تم التوثيق');return}
       kycSheet(true);
     }).catch(function(){kycSheet(true)}).finally(function(){kycStatusCheckInFlight=false});
     return;
   }
+  if(kycIsVerified()){toast('تم التوثيق');queueSync();return}
+  if(kycIsPending()){toast('طلبك قيد المراجعة، وستظهر الحالة بعد قرار المراجعة.');queueSync();return}
   var state={page:0,residence:'',first:'',middle:'',last:'',nationality:'',dob:'',age:'',birthMode:'age',issueCountry:'',countryPickerId:'',countryQuery:'',docType:'',files:{},showWhy:false,showHelp:false};
   var countryCodes='AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW'.split(' ');
   var europeanCodes=new Set('AD AL AT AX BA BE BG BY CH CY CZ DE DK EE ES FI FO FR GB GG GI GR HR HU IE IM IS IT JE LI LT LU LV MC MD ME MK MT NL NO PL PT RO RS RU SE SI SJ SK SM UA VA'.split(' '));
@@ -6796,7 +6808,7 @@ function kycSheet(statusChecked){
     var f=state.files[key],accept='.jpg,.jpeg,.png,.webp,.heic,image/jpeg,image/png,image/webp,image/heic';
     var uploadIcon=f?'✓':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5"></path><path d="M20 16.5v1A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-1"></path></svg>';
     return '<div class="ksv-upload'+(f?' has-file':'')+'" data-upload="'+key+'"><div class="ksv-upload-heading">'+
-      '<span class="ksv-upload-text"><b>'+title+' <em>*</em></b><em>'+(f?esc(f.name):'اختر طريقة إضافة الصورة')+'</em></span><span class="ksv-upload-icon">'+uploadIcon+'</span></div>'+
+      '<span class="ksv-upload-text"><b>'+title+'</b><em>'+(f?esc(f.name):'اختياري — لن تُرسل الصورة')+'</em></span><span class="ksv-upload-icon">'+uploadIcon+'</span></div>'+
       '<div class="ksv-upload-actions"><label class="ksv-upload-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"></path><circle cx="12" cy="13" r="3.2"></circle></svg><span>التصوير بالكاميرا</span><input type="file" data-file="'+key+'" accept="'+accept+'" capture="environment" aria-label="التقاط صورة '+title+'"></label>'+
       '<label class="ksv-upload-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5"></path><path d="M20 16.5v1A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-1"></path></svg><span>رفع من الجهاز</span><input type="file" data-file="'+key+'" accept="'+accept+'" aria-label="رفع صورة '+title+' من الجهاز"></label></div></div>'
   }
@@ -6829,10 +6841,11 @@ function kycSheet(statusChecked){
       var nationality=countries.filter(function(c){return c[0]===state.nationality})[0];
       var fullName=[state.first,state.middle,state.last].filter(Boolean).join(' ');
       var birthInfo=state.birthMode==='age'?'العمر: '+state.age:'تاريخ الميلاد: '+state.dob;
-      body=titleAndDescription('مراجعة البيانات وإرسالها','لا حاجة لرفع صور الوثائق؛ ستُرسل المعلومات التالية فقط للمراجعة.')+
+      body=titleAndDescription('مراجعة البيانات وإرسالها','يمكنك اختيار صورة اختياريًا من الكاميرا أو الجهاز. الصور تبقى على جهازك ولا تُرسل؛ تُرسل البيانات المكتوبة فقط.')+
         '<div class="ksv-pending-card"><span>الاسم الكامل</span><strong>'+esc(fullName)+'</strong><p>الجنسية: '+esc(nationality?nationality[2]:state.nationality)+'</p></div>'+
         '<div class="ksv-pending-card"><span>العمر أو تاريخ الميلاد</span><strong>'+esc(birthInfo)+'</strong><p>بلد الإقامة: '+(state.residence==='US'?'الولايات المتحدة الأمريكية':'بلد آخر')+'</p></div>'+
-        '<div class="ksv-pending-card"><span>بيانات المستند</span><strong>'+esc(country[2]+' · '+(selectedType?selectedType[1]:''))+'</strong><p>سيُرسل الاسم والعمر والجنسية وبيانات المستند فقط، دون صور.</p></div>';
+        '<div class="ksv-pending-card"><span>بيانات المستند</span><strong>'+esc(country[2]+' · '+(selectedType?selectedType[1]:''))+'</strong><p>ستُرسل البيانات النصية فقط، دون صور.</p></div>'+
+        uploadCard('front','الوجه الأمامي')+(state.docType==='passport'?'':uploadCard('back','الوجه الخلفي'));
     }else{
       body='<div class="ksv-complete"><div class="ksv-checkmark">✓</div>'+titleAndDescription('تم استلام بياناتك','أُرسلت بياناتك الشخصية فقط إلى فريق المراجعة.')+
         '<div class="ksv-pending-card"><span>حالة الطلب</span><strong>قيد المراجعة</strong><p>بعد اعتماد الطلب ستظهر عبارة «تم التوثيق» في ملفك الشخصي وستُقفل خانة التحقق.</p></div>'+
@@ -6844,7 +6857,7 @@ function kycSheet(statusChecked){
     var whyHelp=state.showHelp?'<div class="ksv-menu"><button type="button" data-helpcenter>فتح مركز المساعدة</button><button type="button" data-helpclose>إغلاق</button></div>':'';
     window.__veloxKycFormData={fullName:fullName||[state.first,state.middle,state.last].filter(Boolean).join(' '),age:state.birthMode==='age'?state.age:'',dateOfBirth:state.birthMode==='date'?state.dob:'',nationality:nationality?nationality[2]:state.nationality,residence:state.residence==='US'?'الولايات المتحدة الأمريكية':'بلد آخر',docType:selectedType?selectedType[1]:state.docType,issueCountry:country?country[2]:state.issueCountry};
     var html='<div class="ksv-flow" dir="rtl">'+head+whyHelp+'<section class="ksv-panel"><div class="ksv-scroll">'+body+'</div><div class="ksv-action">'+
-      (state.page===3?'<p class="ksv-required"><em>*</em> الحقول مطلوبة</p>':'')+
+      (state.page===3?'<p class="ksv-required">صور الهوية اختيارية ولا تُرسل إلى الخادم.</p>':'')+
       '<button type="button" class="ksv-primary" '+primaryAction+disabled+'>'+primary+'</button></div></section><div class="ksv-footer">واجهة تحقق الهوية <span class="ksv-brand">VeloXCore</span></div>'+(state.countryPickerId?countryPickerMarkup():'')+'</div>';
     var m=flowModal;
     if(!m){m=sheet(html);flowModal=m;m.classList.add('ksv-identity-fullscreen');var shell=m.querySelector('.sh');if(shell)shell.classList.add('ksv-shell')}
@@ -6889,7 +6902,7 @@ function kycSheet(statusChecked){
 function rowEl(id){try{return document.querySelector('#ksp [data-a="'+id+'"]')}catch(e){return null}}
 function setSub(row,txt){if(!row)return;var t=row.querySelector('.tx .mut');if(!t){var tx=row.querySelector('.tx');if(!tx)return;t=document.createElement('span');t.className='mut';tx.appendChild(t)}if(t.textContent!==txt)t.textContent=txt}
 function setSw(row,on){if(!row)return;var s=row.querySelector('.sw');if(s&&s.classList.contains('on')!==!!on)s.classList.toggle('on',!!on)}
-function kycLabel(){var remote=String(prof().verificationStatus||'').trim().toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/\s+/g,' ');if(kycIsVerified())return 'تم التوثيق';if(['pending','review','under review','قيد المراجعة','قيد المعالجة','قيد الانتظار','معلق'].indexOf(remote)>=0)return 'قيد المعالجة · يتم التحقق الآن';if(['rejected','مرفوض','رفض'].indexOf(remote)>=0)return 'مرفوض · راجع حالة طلبك';var k=kycState(),l=Number(k.level)||0;if(k.status==='pending')return 'قيد المعالجة · يتم التحقق الآن';if(l>=3)return 'موثّق بالكامل · المستوى 3';if(l>0)return 'موثّق · المستوى '+l;return 'لم يتم التحقق منه · أكمل الخطوات'}
+function kycLabel(){var remote=kycNormalizedStatus(prof().verificationStatus);if(kycIsVerified())return 'تم التوثيق';if(kycIsPending())return 'قيد المراجعة · تم استلام بياناتك';if(kycIsRejected())return 'مرفوض · اضغط لإعادة التقديم';var k=kycState(),l=Number(k.level)||0;if(k.status==='pending')return 'قيد المراجعة · تم استلام بياناتك';if(remote==='unverified'||remote==='غير موثق')return 'لم يتم التحقق منه · أكمل الخطوات';if(l>=3)return 'موثّق بالكامل · المستوى 3';if(l>0)return 'موثّق · المستوى '+l;return remote?'حالة التحقق: '+String(prof().verificationStatus):'لم يتم التحقق منه · أكمل الخطوات'}
 function inviteLabel(){var c=inviteState().code||prof().inviteCode||'';return c||'لم يتم توفيره'}
 function antiLabel(){var c=antiState().code||'';return c?('مفعّل · '+c.replace(/./g,'•')):'لم يتم التعيين'}
 function syncRows(){
@@ -8828,6 +8841,16 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
     }
   }
 
+  async function refreshVerificationStatus() {
+    const user = currentUser();
+    if (!user.username || !hasActiveSession()) return;
+    try {
+      const result = await apiGet({ action: 'getProfile', username: user.username, uid: user.uid, email: user.email });
+      if (accepted(result)) storeProfile(result);
+    } catch (ignore) {
+    }
+  }
+
   async function loadDashboardData() {
     const user = currentUser();
     if (!user.username || !hasActiveSession()) return;
@@ -9260,7 +9283,10 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
     window.addEventListener('focus', refreshDashboardOnReturn);
     document.addEventListener('visibilitychange', refreshDashboardOnReturn);
     window.setInterval(function () {
-      if (document.visibilityState !== 'hidden') refreshServerBalance();
+      if (document.visibilityState !== 'hidden') {
+        refreshServerBalance();
+        refreshVerificationStatus();
+      }
     }, 20000);
     checkLogin();
   }
