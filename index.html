@@ -4660,6 +4660,7 @@ body.ks-auth-locked #root{filter:blur(4px) brightness(.38);pointer-events:none;u
       else{sessionStorage.setItem(SESSION_KEY,user.email);localStorage.removeItem(SESSION_KEY)}
       syncProfile(user,!!isNew);
       overlay.hidden=true;document.body.classList.remove('ks-auth-locked');
+      setTimeout(function(){var home=document.querySelector('.bottom-nav .ks-nav-item');if(home)home.click()},0);
     }catch(e){showLogin();message('تعذّر حفظ الحساب محليًا. تحقق من إعدادات التخزين في المتصفح.')}
   }
   window.ksAuthUpdateProfile=async function(data){
@@ -6766,7 +6767,7 @@ function kycSheet(){
       body=titleAndDescription('تحميل مستند','تأكد من أن جميع المعلومات الواردة في الصورة مرئية وسهلة القراءة')+
         '<label class="ksv-label">نوع المستند</label><div class="ksv-docsummary"><span>'+country[1]+'　'+(selectedType?selectedType[1]:'')+'</span><button type="button" class="ksv-edit" data-edit aria-label="تعديل نوع المستند">✎</button></div>'+
         uploadCard('front','الوجه الأمامي')+(state.docType==='passport'?'':uploadCard('back','الوجه الخلفي'))+
-        '<p class="ksv-filehint">JPG، PNG، WEBP أو HEIC (الحد الأقصى 50 MB)<br>لا ترفع صورًا غير واضحة أو مقصوصة.</p>';
+        '<p class="ksv-filehint">JPG، PNG، WEBP أو HEIC (الحد الأقصى 4 MB للصورة)<br>لا ترفع صورًا غير واضحة أو مقصوصة.</p>';
     }else{
       body='<div class="ksv-complete"><div class="ksv-checkmark">✓</div>'+titleAndDescription('اكتملت خطوات التحقق','تم إدخال البيانات وإرفاق صور المستندات المطلوبة.')+
         '<p class="ksv-complete-sub">يمكنك العودة إلى حسابك الآن.</p></div>';
@@ -6800,7 +6801,7 @@ function kycSheet(){
     Array.prototype.forEach.call(m.querySelectorAll('[data-country-open]'),function(b){b.onclick=function(){openCountryPicker(b.getAttribute('data-country-open'),m)}});
     Array.prototype.forEach.call(m.querySelectorAll('[data-doctype]'),function(b){b.onclick=function(){state.docType=b.getAttribute('data-doctype');render()}});
     var edit=m.querySelector('[data-edit]');if(edit)edit.onclick=function(){state.page=2;render()};
-    Array.prototype.forEach.call(m.querySelectorAll('[data-file]'),function(inp){inp.onchange=function(){var f=inp.files&&inp.files[0];if(!f)return;var allowed=/\.(jpe?g|png|webp|heic)$/i.test(f.name)||/^image\/(jpeg|png|webp|heic)$/i.test(f.type);if(!allowed){toast('اختر صورة بصيغة JPG أو PNG أو WEBP أو HEIC');return}if(f.size>50*1024*1024){toast('حجم الملف يتجاوز الحد الأقصى 50 MB');return}state.files[inp.getAttribute('data-file')]=f;render()}});
+    Array.prototype.forEach.call(m.querySelectorAll('[data-file]'),function(inp){inp.onchange=function(){var f=inp.files&&inp.files[0];if(!f)return;var allowed=/\.(jpe?g|png|webp|heic)$/i.test(f.name)||/^image\/(jpeg|png|webp|heic)$/i.test(f.type);if(!allowed){toast('اختر صورة بصيغة JPG أو PNG أو WEBP أو HEIC');return}if(f.size>4*1024*1024){toast('الحد الأقصى لكل صورة هو 4 MB');return}state.files[inp.getAttribute('data-file')]=f;window.__veloxKycFiles=window.__veloxKycFiles||{};window.__veloxKycFiles[inp.getAttribute('data-file')]=f;render()}});
     var next=m.querySelector('[data-next]');if(next)next.onclick=function(){
       if(!validPage()){
         if(state.page===0)toast('حدد بلد إقامتك للمتابعة');
@@ -7191,11 +7192,13 @@ body>.ks-welcome-actions{
   function write(r){try{localStorage.setItem(KEY,JSON.stringify(r.filter(function(x){return x&&x.serverSubmitted===true}).slice(0,50)))}catch(e){}}
   var DEAL_STD=["K8v9X2pL", "7T2mR9qA", "Z5b1W4yC", "3J9fH6kL", "X4p9V2mK", "8Q1zT7wE", "Y6c2B8nM", "9N3vL7kQ", "W5r8P1xZ", "2M7qA9tR", "H4k9J3fL", "5B1wY4yC", "P8v9X2kL", "1Z8qT7wE", "B6c2Y8nM", "K7vQ9n3L", "R8p1W5xZ", "T9qA2m7R", "F3j9H6kL", "C5b1Y4wW", "L2kP8v9X", "E7wZ1z8Q", "M8nB6c2Y", "Q9n3K7vL", "Z1xW8r5P", "M3n7P9qR", "4V8xL2kP", "C4yW1b5Z", "L6kH9f3J", "K2mV9p4X", "E7wT1z8Q", "M8nB2cY6", "Q7kL3v9N", "Z1xP8r5W", "R9tA7q2M", "L3fJ9k4H", "C4yY1w5B", "L2kX9v8P", "E7wT8q1Z", "M8nY2cB6", "L3nQ9v7K", "Z5xW1p8R", "R7mA2q9T", "L6kH9j3F", "W4wY1b5C", "X9vP8k2L", "Q8zZ1w7E", "Y2cB6nM8", "L7vK3n9Q", "P5rW8x1Z", "L9x2K4vP", "A9qR7m2T", "9N3kL7vQ", "R2pL8v9X", "Y4cZ5b1W", "L7vQ9n3K", "2M7tA9qR", "5B1wY4cC", "3J9fL6kH", "8V9xK2pL", "7W1zE8qT", "8N2cB6cY", "7K3vQ9nL", "8P1xZ5rW", "9A7qR2mT", "9J3fL6kH", "4Y1wC5bB", "2K9vP8xL", "1T8qE7wZ", "6B2cY8nM", "3K7vL9nQ", "1R8pZ5xW", "7T9qR2mA", "9H3fL6kJ", "5C4yW1bB", "R7q9P3nM", "P4vK2x9L", "Z1b5W4yC", "L6kH3j9F", "K2mV4x9P", "E7wT8q1Z", "M8nB6c2Y", "Q7kL9n3V", "Z1xP5r8W", "R9tA2m7Q", "L3fJ4k9H", "C4yY5b1W", "L2kXP8v9", "E7wT1z8Q", "M8nY6c2B", "L3nQ7k9V", "Z5xW8r1P", "R7mA9q2T", "L6kH3j9F", "W4wY5b1C", "X9vP2k8L", "Q8zZ7w1E", "Y2cB8nM6", "L7vK9n3Q", "P5rW1x8Z"],DEAL_VIP=["VIPK8v9X", "VIP7T2mR", "VIPZ5b1W", "VIP3J9fH", "VIPX4p9V", "VIP8Q1zT", "VIPY6c2B", "VIP9N3vL", "VIPW5r8P", "VIP2M7qA", "VIPH4k9J", "VIP5B1wY", "VIPP8v9X", "VIP1Z8qT", "VIPB6c2Y", "VIPK7vQ9", "VIPR8p1W", "VIPT9qA2", "VIPF3j9H", "VIPC5b1Y", "VIPL2kP8", "VIPE7wZ1", "VIPM8nB6", "VIPQ9n3K", "VIPZ1xW8", "VIPM3n7P", "VIP4V8xL", "VIPC4yW1", "VIPL6kH9", "VIPK2mV9", "VIPE7wT1", "VIPM8nB2", "VIPQ7kL3", "VIPZ1xP8", "VIPR9tA7", "VIPL3fJ9", "VIPC4yY1", "VIPL2kX9", "VIPE7wT8", "VIPM8nY2", "VIPL3nQ9", "VIPZ5xW1", "VIPR7mA2", "VIPL6kH9", "VIPW4wY1", "VIPX9vP8", "VIPQ8zZ1", "VIPY2cB6", "VIPL7vK3", "VIPP5rW8"],DEAL_RULE={std:{rate:0.015,min:100},vip:{rate:0.03,min:425}};
    window.KS_DEAL_CODES=Object.create(null);DEAL_STD.forEach(function(code){window.KS_DEAL_CODES[code]='std'});DEAL_VIP.forEach(function(code){window.KS_DEAL_CODES[code]='vip'});
-   function dealTier(c){return DEAL_VIP.indexOf(c)>-1?'vip':(DEAL_STD.indexOf(c)>-1?'std':null)}
+    function dealTier(c){return DEAL_VIP.indexOf(c)>-1?'vip':(DEAL_STD.indexOf(c)>-1?'std':null)}
+   function autoTradePair(code){if(!Object.prototype.hasOwnProperty.call(window.KS_DEAL_CODES,String(code||'').trim()))return '';var d=new Date();if(d.getDay()!==0&&d.getDay()!==6)return 'XAUUSD / USDT';var pairs=['BTC / USDT','ETH / USDT','SOL / USDT','XRP / USDT','AVAX / USDT'];return pairs[(d.getDate()+d.getMonth())%pairs.length]}
+   window.KS_AUTO_TRADE_PAIR=autoTradePair;
   function dealBal(){return window.KSWallet?window.KSWallet.get().total:0}
   function dealMsg(screen,txt){var tools=screen.querySelector('.ks-invest-tools');if(!tools)return;var m=screen.querySelector('.ks-deal-msg');if(!m){m=document.createElement('div');m.className='ks-deal-msg';m.setAttribute('role','alert');m.setAttribute('dir','rtl');m.style.cssText='font-size:12.5px;line-height:1.6;color:#ff5c7a;text-align:right;margin:8px 6px 0;';tools.parentNode.insertBefore(m,tools.nextSibling);var inp=screen.querySelector('[data-invest-search]');if(inp)inp.addEventListener('input',function(){m.textContent='';m.style.display='none'})}m.textContent=txt||'';m.style.display=txt?'block':'none'}
   function toast(msg){var o=document.querySelector('.ks-invest-toast');if(o)o.remove();var n=document.createElement('div');n.className='ks-invest-toast';n.setAttribute('role','status');n.textContent=msg;document.body.appendChild(n);setTimeout(function(){n.remove()},2600)}
-  function remoteStatus(value){var s=String(value||'').toLowerCase();if(['approved','completed','complete','confirmed','success','succeeded'].indexOf(s)>=0)return 'completed';if(['rejected','declined','failed','cancelled','canceled','error'].indexOf(s)>=0)return 'rejected';return 'pending'}
+  function remoteStatus(value){var s=String(value||'').toLowerCase().trim();if(['approved','approve','accepted','completed','complete','confirmed','success','succeeded','معتمد','مقبول','تم','مكتمل','مكتملة','مفعل'].indexOf(s)>=0)return 'completed';if(['rejected','reject','declined','failed','cancelled','canceled','error','مرفوض','ملغي','ملغى'].indexOf(s)>=0)return 'rejected';return 'pending'}
   function refreshHistory(o){
     var endpoint=window.KS_TRADE_HISTORY_ENDPOINT;
     if(!endpoint){render(o);return Promise.resolve()}
@@ -7206,7 +7209,7 @@ body>.ks-welcome-actions{
       if(!items)throw Error('invalid trade history');
       var rows=items.filter(function(x){return x&&!x.demo&&!x.isDemo&&!x.isMock&&!x.testOnly}).map(function(x){
         var stamp=x.submittedAt||x.createdAt||x.created_at||x.time||x.timestamp||Date.now();
-        return {id:String(x.id||x.clientReference||x.reference||''),name:String(x.name||TYPES[x.requestCategory]||TYPES.all),code:String(x.code||x.tradeCode||''),tier:String(x.tier||''),pair:String(x.pair||''),time:stamp,status:remoteStatus(x.status||x.state),profit:x.profitAmount!=null?Number(x.profitAmount):x.profit!=null?Number(x.profit):null,serverSubmitted:true};
+        return {id:String(x.id||x.clientReference||x.reference||''),name:String(x.name||TYPES[x.requestCategory]||TYPES.all),code:String(x.code||x.tradeCode||''),tier:String(x.tier||''),pair:String(x.pair||''),time:stamp,status:remoteStatus(x.statusCode||x.status||x.state),profit:x.rewardAmount!=null?Number(x.rewardAmount):x.profitAmount!=null?Number(x.profitAmount):x.profit!=null?Number(x.profit):null,serverSubmitted:true};
       }).filter(function(x){return x.id&&x.code});
       write(rows);render(o);
       if(rows.some(function(x){return x.status==='completed'})&&typeof window.KS_SYNC_WALLET_FROM_SERVER==='function')window.KS_SYNC_WALLET_FROM_SERVER();
@@ -7229,14 +7232,14 @@ body>.ks-welcome-actions{
     if(!endpoint){toast('لم يتم ربط إرسال طلب الاستثمار بعد؛ لم يُرسل الطلب ولم يتغير الرصيد.');return}
     var f=screen.querySelector('[data-invest-filter]'),type=f?f.value:'all';
     var now=Date.now(),clientReference='TRD-'+now.toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,8).toUpperCase();
-    var request={type:'investment_submitted',clientReference:clientReference,tradeCode:code,code:code,tier:tier,requestCategory:type,requestCategoryLabel:TYPES[type]||TYPES.all,balanceSnapshot:bal,minimumBalanceRequired:need,profitRuleRate:DEAL_RULE[tier].rate,status:'pending_review',submittedAt:new Date(now).toISOString()};
+    var request={type:'investment_submitted',clientReference:clientReference,tradeCode:code,code:code,tier:tier,pair:window.KS_AUTO_TRADE_PAIR(code),requestCategory:type,requestCategoryLabel:TYPES[type]||TYPES.all,balanceSnapshot:bal,minimumBalanceRequired:need,profitRuleRate:DEAL_RULE[tier].rate,status:'pending_review',submittedAt:new Date(now).toISOString()};
     submitting=true;toast('جارٍ إرسال طلب الاستثمار…');
     try{
       var response=await fetch(endpoint,{method:'POST',credentials:'same-origin',headers:{Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify(request)});
       if(!response.ok)throw Error('investment submit failed');
       var result={};try{result=await response.json()}catch(ignore){}
       if(!result||!(result.ok===true||result.success===true)||result.error)throw Error('investment not acknowledged');
-      var acceptedAt=Date.now(),row={id:String(result.id||result.clientReference||clientReference),name:TYPES[type]||TYPES.all,code:code,tier:tier,time:acceptedAt,status:remoteStatus(result.status||'pending_review'),profit:0,serverSubmitted:true};
+      var acceptedAt=Date.now(),row={id:String(result.id||result.clientReference||clientReference),name:TYPES[type]||TYPES.all,code:code,tier:tier,pair:request.pair,time:acceptedAt,status:remoteStatus(result.codeStatus||result.statusCode||'pending_review'),profit:Number(result.rewardAmount)||0,serverSubmitted:true};
       var r=read();r.unshift(row);write(r);
       used[code]=acceptedAt;try{localStorage.setItem(usedKey,JSON.stringify(used))}catch(e){}
       if(input)input.value='';
@@ -8195,6 +8198,15 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
     };
   }
 
+  function hasActiveSession() {
+    try {
+      return !!(localStorage.getItem('ks_local_session_v1') ||
+        sessionStorage.getItem('ks_local_session_v1'));
+    } catch (ignore) {
+      return false;
+    }
+  }
+
   function endpointFor(action) {
     const user = currentUser();
     const params = new URLSearchParams({ action: action });
@@ -8548,7 +8560,7 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
       const label = document.createElement('label');
       label.className = 'ksv-label';
       label.htmlFor = 'docUrl';
-      label.textContent = 'رابط المستند';
+      label.textContent = 'رابط المستند (اختياري عند رفع الصور)';
       const input = document.createElement('input');
       input.className = 'ksv-input';
       input.id = 'docUrl';
@@ -8566,6 +8578,29 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
   function valueOf(id) {
     const element = document.getElementById(id);
     return element ? String(element.value || '').trim() : '';
+  }
+
+  function readKycFile(file, key) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        const dataUrl = String(reader.result || '');
+        const comma = dataUrl.indexOf(',');
+        if (comma < 0) return reject(new Error('تعذر قراءة صورة الوثيقة'));
+        const inferredMime = file.type ||
+          (/\.heic$/i.test(file.name) ? 'image/heic' :
+            (/\.png$/i.test(file.name) ? 'image/png' :
+              (/\.webp$/i.test(file.name) ? 'image/webp' : 'image/jpeg')));
+        resolve({
+          key: key,
+          name: safeText(file.name),
+          mimeType: safeText(inferredMime),
+          base64: dataUrl.slice(comma + 1)
+        });
+      };
+      reader.onerror = function () { reject(new Error('تعذر قراءة صورة الوثيقة')); };
+      reader.readAsDataURL(file);
+    });
   }
 
   function clearDepositFlow() {
@@ -8616,6 +8651,7 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
         clientReference: 'TRD-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 8).toUpperCase(),
         code: code,
         tier: CODES[code],
+        pair: (input && input.dataset.autoPair) || (window.KS_AUTO_TRADE_PAIR && window.KS_AUTO_TRADE_PAIR(code)) || '',
         username: user.username,
         uid: user.uid,
         email: user.email
@@ -8634,10 +8670,7 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
 
   async function loadDashboardData() {
     const user = currentUser();
-    if (!user.username) {
-      openLogin();
-      return;
-    }
+    if (!user.username || !hasActiveSession()) return;
     configureHistoryEndpoints();
     const queries = [
       apiGet({ action: 'getBalance', username: user.username, uid: user.uid, email: user.email }),
@@ -8672,8 +8705,8 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
   }
 
   function checkLogin() {
-    if (!currentUser().username) openLogin();
-    else loadDashboardData();
+    if (!currentUser().username || !hasActiveSession()) return;
+    loadDashboardData();
   }
 
   function installFetchAdapter() {
@@ -8759,13 +8792,12 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
     if (typeof original !== 'function' || original._apiWrapped) return;
     const logout = function () {
       try {
-        localStorage.clear();
         sessionStorage.clear();
+        window.__veloxKycFiles = {};
       } catch (error) {
-        console.error('Could not clear local storage during logout:', error);
+        console.error('Could not clear the active session during logout:', error);
       }
       original();
-      setTimeout(openLogin, 0);
     };
     logout._apiWrapped = true;
     window.ksAuthLogout = logout;
@@ -8789,6 +8821,11 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
       if (!target) return;
       if (target.id === 'dep-amount-input' || target.classList.contains('dep-amount-input')) {
         window.__veloxDepositAmount = target.value;
+      }
+      if (target.matches && target.matches('[data-invest-search]')) {
+        const pair = window.KS_AUTO_TRADE_PAIR && window.KS_AUTO_TRADE_PAIR(target.value);
+        if (pair) target.dataset.autoPair = pair;
+        else delete target.dataset.autoPair;
       }
       if (target.id === 'docNumber' || target.id === 'docUrl') {
         kycValues[target.id] = target.value;
@@ -8925,29 +8962,56 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
           .map(function (id) { return safeText(kycValues[id]).trim(); })
           .filter(Boolean).join(' ');
         const docType = kycValues.docType || '';
-        if (!fullName || !docType || !docNumber || !docUrl) {
+        const selectedFiles = window.__veloxKycFiles || {};
+        const requiredFileKeys = String(docType).toLowerCase() === 'passport' ? ['front'] : ['front', 'back'];
+        if (!fullName || !docType || !docNumber) {
           showToast('أكمل بيانات الهوية المطلوبة.');
           return;
         }
-        if (!/^https?:\/\//i.test(docUrl)) {
+        if (!docUrl && !requiredFileKeys.every(function (key) { return !!selectedFiles[key]; })) {
+          showToast('أرفق صور الوثيقة المطلوبة قبل المتابعة.');
+          return;
+        }
+        if (docUrl && !/^https?:\/\//i.test(docUrl)) {
           showToast('أدخل رابط مستند صحيحًا.');
           return;
         }
         withBusy(button, async function () {
+          const user = currentUser();
+          const referenceKey = 'ks_pending_kyc_ref_v1:' + (user.uid || user.username || 'user');
+          let clientReference = '';
+          try { clientReference = sessionStorage.getItem(referenceKey) || ''; } catch (ignore) {}
+          if (!clientReference) {
+            clientReference = 'KYC-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+            try { sessionStorage.setItem(referenceKey, clientReference); } catch (ignore) {}
+          }
+          let docFiles = [];
+          try {
+            docFiles = await Promise.all(requiredFileKeys.filter(function (key) {
+              return !!selectedFiles[key];
+            }).map(function (key) { return readKycFile(selectedFiles[key], key); }));
+          } catch (fileError) {
+            showToast(safeText(fileError && fileError.message || 'تعذر قراءة صور الوثيقة.'));
+            return;
+          }
           const result = await apiPost({
             action: 'submitVerification',
-            username: currentUser().username,
-            uid: currentUser().uid,
-            email: currentUser().email,
+            clientReference: clientReference,
+            username: user.username,
+            uid: user.uid,
+            email: user.email,
             fullName: fullName,
             docType: docType,
             docNumber: docNumber,
-            docUrl: docUrl
+            docUrl: docUrl,
+            docFiles: docFiles
           });
           if (!accepted(result)) {
             showToast(apiErrorMessage(result));
             return;
           }
+          try { sessionStorage.removeItem(referenceKey); } catch (ignore) {}
+          window.__veloxKycFiles = {};
           button.disabled = false;
           window.__veloxAllowKycNext = true;
           button.click();
@@ -9011,7 +9075,7 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
   let lastDashboardResumeRefresh = 0;
 
   function refreshDashboardOnReturn() {
-    if (document.visibilityState === 'hidden' || !currentUser().username) return;
+    if (document.visibilityState === 'hidden' || !currentUser().username || !hasActiveSession()) return;
     const now = Date.now();
     if (now - lastDashboardResumeRefresh < 10000) return;
     lastDashboardResumeRefresh = now;
