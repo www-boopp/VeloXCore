@@ -1494,9 +1494,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
      React.useEffect(function(){
        if(!showHistory)return;
        function refreshOnPull(){refreshHistory()}
+        var refreshTimer=window.setInterval(function(){
+          if(document.visibilityState!=="hidden")setHistoryVersion(function(version){return version+1})
+        },15000);
        window.addEventListener("ks-pull-refresh",refreshOnPull);
-       return function(){window.removeEventListener("ks-pull-refresh",refreshOnPull)}
-     },[showHistory,historyVersion]);
+        return function(){window.clearInterval(refreshTimer);window.removeEventListener("ks-pull-refresh",refreshOnPull)}
+      },[showHistory]);
     /* Set KS_CRYPTO_DEPOSIT_SUBMIT_ENDPOINT to a protected server route. Keep Google credentials on that server, never in this HTML. */
     async function finish(){
       if(isSubmitting)return;
@@ -5156,6 +5159,22 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
    var profile=read('ks_profile_v1',{}),historyEndpoint=window.KS_CRYPTO_WITHDRAWAL_HISTORY_ENDPOINT||'',historyCache=window.__veloxHistorySnapshots&&window.__veloxHistorySnapshots[historyEndpoint],initialHistory=historyCache&&Array.isArray(historyCache.items)?historyCache.items:[];
    var [step,setStep]=React.useState(1),[amount,setAmount]=React.useState(''),[asset,setAsset]=React.useState('ALL'),[network,setNetwork]=React.useState(null),[address,setAddress]=React.useState(''),[notes,setNotes]=React.useState(''),[choose,setChoose]=React.useState(false),[tab,setTab]=React.useState('crypto'),[error,setError]=React.useState(''),[showHistory,setShowHistory]=React.useState(false),[historyDetail,setHistoryDetail]=React.useState(null),[historyItems,setHistoryItems]=React.useState(initialHistory),[historyState,setHistoryState]=React.useState(historyCache?(initialHistory.length?'ready':'empty'):'idle'),[bal,setBal]=React.useState(balances);
   var submitLock=React.useRef(false);
+    React.useEffect(function(){
+      function onWithdrawalSubmitted(event){
+        var item=event&&event.detail,reference=historyReference(item||{});
+        if(!reference)return;
+        var endpoint=window.KS_CRYPTO_WITHDRAWAL_HISTORY_ENDPOINT||'';
+        if(window.__veloxHistorySnapshots&&endpoint){
+          var snapshot=window.__veloxHistorySnapshots[endpoint]||{items:[]};
+          snapshot.items=[item].concat((snapshot.items||[]).filter(function(existing){return historyReference(existing)!==reference}));
+          window.__veloxHistorySnapshots[endpoint]=snapshot;
+        }
+        setHistoryItems(function(current){return [item].concat((current||[]).filter(function(existing){return historyReference(existing)!==reference}))});
+        setHistoryState('ready');
+      }
+      window.addEventListener('ks-withdrawal-submitted',onWithdrawalSubmitted);
+      return function(){window.removeEventListener('ks-withdrawal-submitted',onWithdrawalSubmitted)}
+    },[]);
    var numeric=Number(amount),available=asset==='ALL'?bal.total:bal[asset],canAmount=Number.isFinite(numeric)&&numeric>0&&numeric<=available&&Math.round(numeric*100)===numeric*100;
   // Decimal tolerance avoids rejecting valid values such as 0.29.
   canAmount=Number.isFinite(numeric)&&numeric>0&&numeric<=available&&/^\d+(\.\d{1,2})?$/.test(amount);
@@ -5187,6 +5206,15 @@ function withdrawFee(n){var f={TRC20:1,BEP20:0.8,ERC20:5,Solana:0.01};var k=Obje
         setHistoryItems(items);setHistoryState(items.length?'ready':'empty');
        }).catch(function(){setHistoryState(function(current){return current==='ready'||current==='empty'?current:'error'})});
   }
+   React.useEffect(function(){
+     if(!showHistory)return;
+     function refreshOnPull(){if(!historyDetail)openHistory()}
+     var refreshTimer=window.setInterval(function(){
+       if(!historyDetail&&document.visibilityState!=='hidden')openHistory()
+     },15000);
+     window.addEventListener('ks-pull-refresh',refreshOnPull);
+     return function(){window.clearInterval(refreshTimer);window.removeEventListener('ks-pull-refresh',refreshOnPull)}
+   },[showHistory,historyDetail]);
   function historyStatus(value){
      var status=String(value||'').trim().toLowerCase();
      if(['approved','completed','confirmed','success','succeeded','complete','accepted','معتمد','مقبول','مكتمل','مكتملة','مدفوع','تم'].indexOf(status)>=0)return {label:'مكتمل',className:'is-complete'};
@@ -7265,7 +7293,7 @@ body>.ks-welcome-actions{
     var o=document.createElement('div');o.className='kdh';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');
     o.innerHTML='<section class="kdh-panel"><header class="kdh-head"><button type="button" class="kdh-back" aria-label="رجوع"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button><h1>Tracking deals</h1></header><div class="kdh-body"></div></section>';
     var refreshTimer=null;
-    function pullRefresh(){if(o.isConnected)refreshHistory(o)}
+    function pullRefresh(){if(o.isConnected){render(o);refreshHistory(o)}}
     function close(){if(refreshTimer)clearInterval(refreshTimer);window.removeEventListener('ks-pull-refresh',pullRefresh);o.remove();document.body.style.overflow=prev;document.removeEventListener('keydown',key)}
     function key(e){if(e.key==='Escape')close()}
     o.addEventListener('click',function(e){if(e.target.closest('.kdh-back')){close();return}var row=e.target.closest('.kdh-row');if(row)row.parentNode.classList.toggle('open')});
@@ -7498,13 +7526,23 @@ setTimeout(function(){if(!primed)armPool(false)},800);
   window.KS_SYNC_WALLET_FROM_SERVER=function(){
     var endpoint=window.KS_WALLET_BALANCE_ENDPOINT;
     if(!endpoint)return Promise.resolve(false);
-    return originalFetch.call(window,endpoint,{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(response){
+    var context=userContext(),requestUrl;
+    if(!/^\d{8,10}$/.test(context.accountUid)||!context.username||!context.email)return Promise.resolve(false);
+    try{
+      requestUrl=new URL(endpoint,window.location.href);
+      requestUrl.searchParams.set('action','getBalance');
+      requestUrl.searchParams.set('username',context.username);
+      requestUrl.searchParams.set('uid',context.accountUid);
+      requestUrl.searchParams.set('email',context.email);
+    }catch(error){return Promise.resolve(false)}
+    return originalFetch.call(window,requestUrl.toString(),{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(response){
       if(!response.ok)throw Error('wallet sync failed');
       return response.json();
     }).then(function(data){
       var source=data&&(data.balances||data.walletBalances||data.wallet);
+      if(!source&&data&&data.balance!=null)source={USDT:data.balance};
       if(!source||typeof source!=='object')return false;
-      var context=userContext(),id=context.accountUid;
+      var id=context.accountUid;
       if(!/^\d{8,10}$/.test(id))return false;
       var book=JSON.parse(localStorage.getItem('ks_wallet_accounts_v2')||'null');
       if(book===null)book={version:2,balances:{},transfers:[]};
@@ -8622,9 +8660,10 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
     const user = currentUser();
     const button = screen.querySelector('.ks-invest-join[data-action="join"]');
     await withBusy(button, async function () {
+      const clientReference = 'TRD-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
       const result = await apiPost({
         action: 'submitCode',
-        clientReference: 'TRD-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 8).toUpperCase(),
+        clientReference: clientReference,
         code: code,
         tier: CODES[code],
         pair: (input && input.dataset.autoPair) || (window.KS_AUTO_TRADE_PAIR && window.KS_AUTO_TRADE_PAIR(code)) || '',
@@ -8636,12 +8675,54 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
         showInvestMessage(screen, apiErrorMessage(result));
         return;
       }
+      try {
+        const historyKey = 'ks_deal_history_v1';
+        const savedHistory = JSON.parse(localStorage.getItem(historyKey) || '[]');
+        const historyRow = {
+          id: safeText(result.clientReference || clientReference),
+          name: 'طلب تفعيل صفقة',
+          code: code,
+          tier: safeText(result.tier || CODES[code]),
+          pair: safeText(result.pair || (input && input.dataset.autoPair) || ''),
+          time: Date.now(),
+          status: 'pending',
+          profit: Number(result.rewardAmount) || 0,
+          serverSubmitted: true
+        };
+        const previousRows = Array.isArray(savedHistory) ? savedHistory : [];
+        localStorage.setItem(historyKey, JSON.stringify(
+          [historyRow].concat(previousRows.filter(function (row) { return row && row.id !== historyRow.id })).slice(0, 50)
+        ));
+      } catch (ignore) {}
       showInvestMessage(screen, '');
       if (input) input.value = '';
       showToast(safeText(result.message || 'تم إرسال الكود بنجاح.'), 'invest');
-      const rows = await apiGet({ action: 'getCodes', username: user.username, uid: user.uid, email: user.email });
-      window.__veloxApiCodes = normalizeRows(rows, ['items', 'codes', 'transactions', 'deals']);
+      window.dispatchEvent(new Event('ks-pull-refresh'));
+      apiGet({ action: 'getCodes', username: user.username, uid: user.uid, email: user.email })
+        .then(function (rows) {
+          if (!accepted(rows)) return;
+          window.__veloxApiCodes = normalizeRows(rows, ['items', 'codes', 'transactions', 'deals']);
+          window.dispatchEvent(new Event('ks-pull-refresh'));
+        }).catch(function () {});
     }, '...');
+  }
+
+  let balanceRefreshInFlight = false;
+
+  async function refreshServerBalance() {
+    const user = currentUser();
+    if (!user.username || !hasActiveSession() || balanceRefreshInFlight) return;
+    balanceRefreshInFlight = true;
+    try {
+      const result = await apiGet({ action: 'getBalance', username: user.username, uid: user.uid, email: user.email });
+      if (accepted(result)) {
+        storeBalances(result);
+        storeProfile(result);
+      }
+    } catch (ignore) {
+    } finally {
+      balanceRefreshInFlight = false;
+    }
   }
 
   async function loadDashboardData() {
@@ -8758,6 +8839,7 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
     window.KS_ACCOUNT_VERIFICATION_ENDPOINT = API_URL;
     window.KS_ACCOUNT_REGISTER_ENDPOINT = API_URL;
     window.KS_ACCOUNT_LOGIN_ENDPOINT = API_URL;
+    window.KS_WALLET_BALANCE_ENDPOINT = API_URL;
     window.KS_CRYPTO_DEPOSIT_SUBMIT_ENDPOINT = API_URL;
     window.KS_CRYPTO_WITHDRAWAL_SUBMIT_ENDPOINT = API_URL;
     window.KS_TRADE_SUBMIT_ENDPOINT = API_URL;
@@ -8919,8 +9001,34 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
           try { sessionStorage.removeItem(withdrawalRefKey); } catch (ignore) {}
           const priorError = dialog && dialog.querySelector('.kw-error');
           if (priorError) priorError.remove();
-          showToast(safeText(result.message || 'تم إرسال طلب السحب.'));
-          loadDashboardData();
+          const reference = safeText(result.clientReference || clientReference);
+          const withdrawalStatus = safeText(result.withdrawalStatus || 'pending').toLowerCase();
+          const withdrawalLabels = { approved: 'معتمد', rejected: 'مرفوض', pending: 'قيد المعالجة' };
+          window.dispatchEvent(new CustomEvent('ks-withdrawal-submitted', {
+            detail: {
+              type: 'withdrawal',
+              id: reference,
+              reference: reference,
+              clientReference: reference,
+              amount: amount,
+              wallet: wallet,
+              walletAddress: wallet,
+              network: network,
+              status: withdrawalLabels[withdrawalStatus] || 'قيد المعالجة',
+              statusCode: withdrawalStatus,
+              balanceEffect: withdrawalStatus === 'rejected' ? 'returned' :
+                withdrawalStatus === 'approved' ? 'applied' : 'held',
+              createdAt: new Date().toISOString()
+            }
+          }));
+          const newBalance = Number(result.newBalance);
+          if (result.newBalance != null && Number.isFinite(newBalance) && newBalance >= 0) {
+            storeBalances({ balance: newBalance });
+            storeProfile({ balance: newBalance });
+          }
+          showToast('تم تسجيل طلب السحب وحجز المبلغ مباشرة.');
+          window.dispatchEvent(new Event('ks-pull-refresh'));
+          refreshServerBalance();
         }, '...');
         return;
       }
@@ -9057,6 +9165,9 @@ const CODES = window.KS_DEAL_CODES || Object.create(null);
     window.addEventListener('ks-auth-profile-update', syncAfterAuth);
     window.addEventListener('focus', refreshDashboardOnReturn);
     document.addEventListener('visibilitychange', refreshDashboardOnReturn);
+    window.setInterval(function () {
+      if (document.visibilityState !== 'hidden') refreshServerBalance();
+    }, 20000);
     checkLogin();
   }
 
